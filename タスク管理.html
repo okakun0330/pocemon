@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>タスク管理</title>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      padding: 24px 16px;
+      color: #1a1a2e;
+    }
+    #root { max-width: 760px; margin: 0 auto; }
+
+    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 24px; color: #1a1a2e; }
+
+    /* Form */
+    .form-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,.07);
+    }
+    .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+    .form-row input, .form-row select {
+      flex: 1; min-width: 140px;
+      border: 1.5px solid #dde1e9;
+      border-radius: 8px;
+      padding: 9px 12px;
+      font-size: 0.95rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-row input:focus, .form-row select:focus { border-color: #5b6af0; }
+    .btn-add {
+      background: #5b6af0;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 10px 22px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s;
+      white-space: nowrap;
+    }
+    .btn-add:hover { background: #4453d6; }
+    .btn-add:disabled { background: #b0b8f0; cursor: not-allowed; }
+
+    /* Sort bar */
+    .sort-bar {
+      display: flex; align-items: center; gap: 8px;
+      margin-bottom: 14px; font-size: 0.88rem; color: #666;
+    }
+    .sort-bar select {
+      border: 1.5px solid #dde1e9; border-radius: 6px;
+      padding: 5px 10px; font-size: 0.88rem; outline: none; cursor: pointer;
+    }
+
+    /* Task list */
+    .task-list { display: flex; flex-direction: column; gap: 10px; }
+    .task-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 14px 16px;
+      box-shadow: 0 1px 5px rgba(0,0,0,.06);
+      display: flex; align-items: flex-start; gap: 12px;
+      transition: box-shadow .15s;
+    }
+    .task-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.1); }
+    .task-card.done { opacity: .55; }
+
+    .task-check input[type=checkbox] {
+      width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #5b6af0;
+    }
+
+    .task-body { flex: 1; min-width: 0; }
+    .task-title {
+      font-size: 1rem; font-weight: 500;
+      word-break: break-word;
+    }
+    .task-title.done-text { text-decoration: line-through; color: #999; }
+    .task-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
+
+    /* Priority badge */
+    .badge {
+      border-radius: 5px; padding: 2px 8px;
+      font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    }
+    .badge-high   { background: #ffe0e0; color: #c0392b; }
+    .badge-medium { background: #fff3cd; color: #b7791f; }
+    .badge-low    { background: #e0f4e0; color: #276749; }
+
+    /* Status badge */
+    .status-badge {
+      border-radius: 5px; padding: 2px 8px;
+      font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none;
+    }
+    .status-todo       { background: #e8eaf6; color: #3949ab; }
+    .status-in_progress { background: #fff8e1; color: #f57c00; }
+    .status-done       { background: #e8f5e9; color: #2e7d32; }
+
+    /* Deadline */
+    .deadline { font-size: 0.8rem; color: #666; }
+    .deadline.overdue { color: #e53e3e; font-weight: 600; }
+
+    /* Edit inline */
+    .edit-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%; }
+    .edit-row input, .edit-row select {
+      border: 1.5px solid #5b6af0; border-radius: 6px;
+      padding: 5px 8px; font-size: 0.9rem; outline: none;
+    }
+    .edit-row input { flex: 1; min-width: 120px; }
+
+    /* Action buttons */
+    .task-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+    .btn-icon {
+      background: none; border: none; cursor: pointer;
+      padding: 5px 7px; border-radius: 6px;
+      font-size: 1rem; transition: background .15s;
+    }
+    .btn-icon:hover { background: #f0f2f5; }
+    .btn-icon.danger:hover { background: #ffe0e0; }
+
+    .empty { text-align: center; color: #aaa; padding: 40px 0; font-size: 1rem; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+
+const STORAGE_KEY = 'tasks_v1';
+const PRIORITIES = ['high', 'medium', 'low'];
+const PRIORITY_LABEL = { high: '高', medium: '中', low: '低' };
+const STATUS_LABEL = { todo: '未着手', in_progress: '進行中', done: '完了' };
+const STATUS_CYCLE = { todo: 'in_progress', in_progress: 'done', done: 'todo' };
+
+function loadTasks() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveTasks(tasks) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
+}
+
+function isOverdue(deadline) {
+  if (!deadline) return false;
+  return new Date(deadline) < new Date(new Date().toDateString());
+}
+
+function formatDeadline(deadline) {
+  if (!deadline) return null;
+  const d = new Date(deadline);
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function TaskForm({ onAdd }) {
+  const [title, setTitle] = useState('');
+  const [priority, setPriority] = useState('medium');
+  const [deadline, setDeadline] = useState('');
+
+  function handleSubmit(e) {
+    e.preventDefault();
+    if (!title.trim()) return;
+    onAdd({ title: title.trim(), priority, deadline: deadline || null });
+    setTitle(''); setPriority('medium'); setDeadline('');
+  }
+
+  return (
+    <div className="form-card">
+      <form onSubmit={handleSubmit}>
+        <div className="form-row">
+          <input
+            placeholder="タスク名を入力..."
+            value={title}
+            onChange={e => setTitle(e.target.value)}
+          />
+          <select value={priority} onChange={e => setPriority(e.target.value)}>
+            <option value="high">優先度: 高</option>
+            <option value="medium">優先度: 中</option>
+            <option value="low">優先度: 低</option>
+          </select>
+          <input
+            type="date"
+            value={deadline}
+            onChange={e => setDeadline(e.target.value)}
+          />
+          <button className="btn-add" type="submit" disabled={!title.trim()}>
+            ＋ 追加
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
+
+function TaskItem({ task, onUpdate, onDelete }) {
+  const [editing, setEditing] = useState(false);
+  const [editTitle, setEditTitle] = useState(task.title);
+  const [editPriority, setEditPriority] = useState(task.priority);
+  const [editDeadline, setEditDeadline] = useState(task.deadline || '');
+
+  function saveEdit() {
+    if (!editTitle.trim()) return;
+    onUpdate(task.id, { title: editTitle.trim(), priority: editPriority, deadline: editDeadline || null });
+    setEditing(false);
+  }
+
+  function cancelEdit() {
+    setEditTitle(task.title); setEditPriority(task.priority); setEditDeadline(task.deadline || '');
+    setEditing(false);
+  }
+
+  function cycleStatus() {
+    onUpdate(task.id, { status: STATUS_CYCLE[task.status] });
+  }
+
+  const overdue = isOverdue(task.deadline) && task.status !== 'done';
+
+  return (
+    <div className={`task-card${task.status === 'done' ? ' done' : ''}`}>
+      <div className="task-check">
+        <input
+          type="checkbox"
+          checked={task.status === 'done'}
+          onChange={() => onUpdate(task.id, { status: task.status === 'done' ? 'todo' : 'done' })}
+        />
+      </div>
+      <div className="task-body">
+        {editing ? (
+          <div className="edit-row">
+            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} autoFocus />
+            <select value={editPriority} onChange={e => setEditPriority(e.target.value)}>
+              <option value="high">高</option>
+              <option value="medium">中</option>
+              <option value="low">低</option>
+            </select>
+            <input type="date" value={editDeadline} onChange={e => setEditDeadline(e.target.value)} />
+          </div>
+        ) : (
+          <div className={`task-title${task.status === 'done' ? ' done-text' : ''}`}>{task.title}</div>
+        )}
+        <div className="task-meta">
+          <span className={`badge badge-${task.priority}`}>{PRIORITY_LABEL[task.priority]}</span>
+          <button
+            className={`status-badge status-${task.status}`}
+            onClick={cycleStatus}
+            title="クリックでステータス変更"
+          >
+            {STATUS_LABEL[task.status]}
+          </button>
+          {task.deadline && (
+            <span className={`deadline${overdue ? ' overdue' : ''}`}>
+              {overdue ? '⚠ ' : '📅 '}{formatDeadline(task.deadline)}
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="task-actions">
+        {editing ? (
+          <>
+            <button className="btn-icon" onClick={saveEdit} title="保存">✔</button>
+            <button className="btn-icon" onClick={cancelEdit} title="キャンセル">✖</button>
+          </>
+        ) : (
+          <>
+            <button className="btn-icon" onClick={() => setEditing(true)} title="編集">✏️</button>
+            <button className="btn-icon danger" onClick={() => onDelete(task.id)} title="削除">🗑️</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const SORT_OPTIONS = [
+  { value: 'createdAt_desc', label: '作成日（新しい順）' },
+  { value: 'createdAt_asc',  label: '作成日（古い順）' },
+  { value: 'priority',       label: '優先度（高い順）' },
+  { value: 'deadline',       label: '期限（近い順）' },
+];
+
+const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
+
+function App() {
+  const [tasks, setTasks] = useState(loadTasks);
+  const [sort, setSort] = useState('createdAt_desc');
+
+  useEffect(() => { saveTasks(tasks); }, [tasks]);
+
+  function addTask({ title, priority, deadline }) {
+    const task = {
+      id: crypto.randomUUID(),
+      title, priority, deadline,
+      status: 'todo',
+      createdAt: new Date().toISOString(),
+    };
+    setTasks(prev => [task, ...prev]);
+  }
+
+  function updateTask(id, patch) {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
+  }
+
+  function deleteTask(id) {
+    if (!confirm('このタスクを削除しますか？')) return;
+    setTasks(prev => prev.filter(t => t.id !== id));
+  }
+
+  const sorted = useMemo(() => {
+    const arr = [...tasks];
+    if (sort === 'priority') {
+      arr.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
+    } else if (sort === 'deadline') {
+      arr.sort((a, b) => {
+        if (!a.deadline && !b.deadline) return 0;
+        if (!a.deadline) return 1;
+        if (!b.deadline) return -1;
+        return a.deadline.localeCompare(b.deadline);
+      });
+    } else if (sort === 'createdAt_asc') {
+      arr.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+    } else {
+      arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    }
+    return arr;
+  }, [tasks, sort]);
+
+  const counts = useMemo(() => ({
+    total: tasks.length,
+    done: tasks.filter(t => t.status === 'done').length,
+    overdue: tasks.filter(t => isOverdue(t.deadline) && t.status !== 'done').length,
+  }), [tasks]);
+
+  return (
+    <div>
+      <h1>📋 タスク管理</h1>
+      <TaskForm onAdd={addTask} />
+      <div className="sort-bar">
+        <span>タスク {counts.total}件</span>
+        {counts.done > 0 && <span>✅ 完了 {counts.done}</span>}
+        {counts.overdue > 0 && <span style={{color:'#e53e3e'}}>⚠ 期限切れ {counts.overdue}</span>}
+        <div style={{flex:1}} />
+        <span>並び替え:</span>
+        <select value={sort} onChange={e => setSort(e.target.value)}>
+          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+        </select>
+      </div>
+      <div className="task-list">
+        {sorted.length === 0
+          ? <div className="empty">タスクがありません。上のフォームから追加してください。</div>
+          : sorted.map(task =>
+              <TaskItem key={task.id} task={task} onUpdate={updateTask} onDelete={deleteTask} />
+            )
+        }
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

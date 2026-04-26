@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>タイマー</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #1a1a2e;
+      color: #eee;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+    }
+
+    .container {
+      text-align: center;
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      color: #888;
+      margin-bottom: 40px;
+    }
+
+    .display {
+      font-size: 6rem;
+      font-weight: 200;
+      letter-spacing: 0.05em;
+      font-variant-numeric: tabular-nums;
+      margin-bottom: 40px;
+      color: #fff;
+      transition: color 0.3s;
+    }
+
+    .display.warning { color: #f39c12; }
+    .display.danger  { color: #e74c3c; }
+
+    .input-row {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 32px;
+    }
+
+    .input-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .input-group label {
+      font-size: 0.75rem;
+      color: #888;
+      letter-spacing: 0.1em;
+    }
+
+    .input-group input {
+      width: 72px;
+      padding: 10px;
+      font-size: 1.4rem;
+      text-align: center;
+      background: #16213e;
+      border: 1px solid #333;
+      border-radius: 8px;
+      color: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .input-group input:focus { border-color: #4a9eff; }
+
+    .buttons {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+
+    button {
+      padding: 14px 32px;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      transition: opacity 0.2s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+    button:disabled { opacity: 0.3; cursor: default; }
+
+    #btn-start  { background: #4a9eff; color: #fff; }
+    #btn-pause  { background: #f39c12; color: #fff; }
+    #btn-reset  { background: #333; color: #aaa; }
+
+    .progress {
+      margin-top: 32px;
+      height: 4px;
+      background: #222;
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .progress-bar {
+      height: 100%;
+      background: #4a9eff;
+      width: 100%;
+      transition: width 0.5s linear, background 0.3s;
+    }
+  </style>
+</head>
+<body>
+<div class="container">
+  <h1>タイマー</h1>
+
+  <div class="display" id="display">00:00:00</div>
+
+  <div class="input-row">
+    <div class="input-group">
+      <label>時間</label>
+      <input type="number" id="hours" min="0" max="99" value="0">
+    </div>
+    <div class="input-group">
+      <label>分</label>
+      <input type="number" id="minutes" min="0" max="59" value="5">
+    </div>
+    <div class="input-group">
+      <label>秒</label>
+      <input type="number" id="seconds" min="0" max="59" value="0">
+    </div>
+  </div>
+
+  <div class="buttons">
+    <button id="btn-start">スタート</button>
+    <button id="btn-pause" disabled>一時停止</button>
+    <button id="btn-reset">リセット</button>
+  </div>
+
+  <div class="progress">
+    <div class="progress-bar" id="progress-bar"></div>
+  </div>
+</div>
+
+<script>
+  let totalSeconds = 0;
+  let remaining = 0;
+  let intervalId = null;
+  let running = false;
+
+  const display    = document.getElementById('display');
+  const progressBar = document.getElementById('progress-bar');
+  const btnStart   = document.getElementById('btn-start');
+  const btnPause   = document.getElementById('btn-pause');
+  const btnReset   = document.getElementById('btn-reset');
+  const inputH     = document.getElementById('hours');
+  const inputM     = document.getElementById('minutes');
+  const inputS     = document.getElementById('seconds');
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function formatTime(s) {
+    const h = Math.floor(s / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    const sec = s % 60;
+    return `${pad(h)}:${pad(m)}:${pad(sec)}`;
+  }
+
+  function updateDisplay() {
+    display.textContent = formatTime(remaining);
+
+    const pct = totalSeconds > 0 ? (remaining / totalSeconds) * 100 : 100;
+    progressBar.style.width = pct + '%';
+
+    display.classList.remove('warning', 'danger');
+    progressBar.style.background = '#4a9eff';
+    if (remaining <= 10) {
+      display.classList.add('danger');
+      progressBar.style.background = '#e74c3c';
+    } else if (remaining <= 30) {
+      display.classList.add('warning');
+      progressBar.style.background = '#f39c12';
+    }
+  }
+
+  function getInputSeconds() {
+    const h = parseInt(inputH.value) || 0;
+    const m = parseInt(inputM.value) || 0;
+    const s = parseInt(inputS.value) || 0;
+    return h * 3600 + m * 60 + s;
+  }
+
+  function setInputsDisabled(disabled) {
+    inputH.disabled = disabled;
+    inputM.disabled = disabled;
+    inputS.disabled = disabled;
+  }
+
+  btnStart.addEventListener('click', () => {
+    if (!running) {
+      if (remaining === 0) {
+        totalSeconds = getInputSeconds();
+        remaining = totalSeconds;
+        if (remaining === 0) return;
+      }
+      running = true;
+      setInputsDisabled(true);
+      btnStart.disabled = true;
+      btnPause.disabled = false;
+
+      intervalId = setInterval(() => {
+        remaining--;
+        updateDisplay();
+        if (remaining <= 0) {
+          clearInterval(intervalId);
+          running = false;
+          btnStart.disabled = false;
+          btnPause.disabled = true;
+          setInputsDisabled(false);
+          alert('時間になりました！');
+        }
+      }, 1000);
+    }
+  });
+
+  btnPause.addEventListener('click', () => {
+    if (running) {
+      clearInterval(intervalId);
+      running = false;
+      btnStart.disabled = false;
+      btnStart.textContent = '再開';
+      btnPause.disabled = true;
+    }
+  });
+
+  btnReset.addEventListener('click', () => {
+    clearInterval(intervalId);
+    running = false;
+    remaining = 0;
+    totalSeconds = 0;
+    btnStart.disabled = false;
+    btnStart.textContent = 'スタート';
+    btnPause.disabled = true;
+    setInputsDisabled(false);
+    display.textContent = '00:00:00';
+    display.classList.remove('warning', 'danger');
+    progressBar.style.width = '100%';
+    progressBar.style.background = '#4a9eff';
+  });
+
+  updateDisplay();
+</script>
+</body>
+</html>
