@@ -209,13 +209,22 @@
     dark:     '#705848', steel:    '#b8b8d0', fairy:    '#ee99ac',
   };
 
+  const TYPE_JA = {
+    normal: 'ノーマル', fire: 'ほのお', water: 'みず',
+    electric: 'でんき', grass: 'くさ', ice: 'こおり',
+    fighting: 'かくとう', poison: 'どく', ground: 'じめん',
+    flying: 'ひこう', psychic: 'エスパー', bug: 'むし',
+    rock: 'いわ', ghost: 'ゴースト', dragon: 'ドラゴン',
+    dark: 'あく', steel: 'はがね', fairy: 'フェアリー',
+  };
+
   const STAT_LABELS = {
     hp:               'HP',
-    attack:           'ATK',
-    defense:          'DEF',
-    'special-attack': 'SpATK',
-    'special-defense':'SpDEF',
-    speed:            'SPD',
+    attack:           'こうげき',
+    defense:          'ぼうぎょ',
+    'special-attack': 'とくこう',
+    'special-defense':'とくぼう',
+    speed:            'すばやさ',
   };
 
   const TOTAL = 1025;
@@ -229,9 +238,17 @@
 
     try {
       const id = Math.floor(Math.random() * TOTAL) + 1;
-      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      const [res, speciesRes] = await Promise.all([
+        fetch(`https://pokeapi.co/api/v2/pokemon/${id}`),
+        fetch(`https://pokeapi.co/api/v2/pokemon-species/${id}`),
+      ]);
       if (!res.ok) throw new Error('fetch failed');
       const data = await res.json();
+      const species = speciesRes.ok ? await speciesRes.json() : null;
+
+      const jaName = species?.names?.find(n => n.language.name === 'ja-Hrkt')?.name
+                  || species?.names?.find(n => n.language.name === 'ja')?.name
+                  || data.name;
 
       const sprite =
         data.sprites.other?.['official-artwork']?.front_default ||
@@ -244,13 +261,13 @@
       card.classList.remove('loading');
       card.innerHTML = `
         <div class="fade-in" style="display:flex;flex-direction:column;align-items:center;width:100%">
-          ${sprite ? `<img id="sprite" src="${sprite}" alt="${data.name}">` : ''}
-          <div id="name">${data.name}</div>
+          ${sprite ? `<img id="sprite" src="${sprite}" alt="${jaName}">` : ''}
+          <div id="name">${jaName}</div>
           <div id="number">No. ${String(data.id).padStart(4,'0')}</div>
           <div id="types">
             ${types.map(t => `
               <span class="type-badge" style="background:${TYPE_COLORS[t] || '#888'}">
-                ${t}
+                ${TYPE_JA[t] || t}
               </span>
             `).join('')}
           </div>
