@@ -1,373 +1,278 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>タスク管理</title>
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ランダムポケモン</title>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #f0f2f5;
       min-height: 100vh;
-      padding: 24px 16px;
-      color: #1a1a2e;
-    }
-    #root { max-width: 760px; margin: 0 auto; }
-
-    h1 { font-size: 1.8rem; font-weight: 700; margin-bottom: 24px; color: #1a1a2e; }
-
-    /* Form */
-    .form-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 24px;
-      box-shadow: 0 2px 8px rgba(0,0,0,.07);
-    }
-    .form-row { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
-    .form-row input, .form-row select {
-      flex: 1; min-width: 140px;
-      border: 1.5px solid #dde1e9;
-      border-radius: 8px;
-      padding: 9px 12px;
-      font-size: 0.95rem;
-      outline: none;
-      transition: border-color .2s;
-    }
-    .form-row input:focus, .form-row select:focus { border-color: #5b6af0; }
-    .btn-add {
-      background: #5b6af0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+      font-family: 'Segoe UI', sans-serif;
       color: #fff;
-      border: none;
-      border-radius: 8px;
-      padding: 10px 22px;
-      font-size: 0.95rem;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 2rem;
+      letter-spacing: 0.05em;
+      text-shadow: 0 0 20px rgba(255, 204, 0, 0.6);
+      color: #ffcc00;
+    }
+
+    #card {
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 24px;
+      padding: 2.5rem 3rem;
+      width: 320px;
+      min-height: 380px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 8px 40px rgba(0,0,0,0.4);
+      transition: transform 0.2s;
+    }
+
+    #card:not(.loading):hover {
+      transform: translateY(-4px);
+    }
+
+    #sprite {
+      width: 160px;
+      height: 160px;
+      image-rendering: pixelated;
+      filter: drop-shadow(0 4px 12px rgba(255,204,0,0.4));
+      transition: opacity 0.3s;
+    }
+
+    #name {
+      font-size: 2rem;
+      font-weight: 700;
+      text-transform: capitalize;
+      margin-top: 1rem;
+      letter-spacing: 0.05em;
+    }
+
+    #number {
+      font-size: 0.9rem;
+      color: rgba(255,255,255,0.5);
+      margin-top: 0.25rem;
+    }
+
+    #types {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
+    .type-badge {
+      padding: 0.3rem 0.9rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
       font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    #stats {
+      width: 100%;
+      margin-top: 1.5rem;
+    }
+
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .stat-label {
+      width: 60px;
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.6);
+      text-align: right;
+      text-transform: uppercase;
+    }
+
+    .stat-bar-bg {
+      flex: 1;
+      height: 6px;
+      background: rgba(255,255,255,0.1);
+      border-radius: 3px;
+      overflow: hidden;
+    }
+
+    .stat-bar {
+      height: 100%;
+      border-radius: 3px;
+      background: linear-gradient(90deg, #ffcc00, #ff6b6b);
+      transition: width 0.6s ease;
+    }
+
+    .stat-value {
+      width: 30px;
+      font-size: 0.75rem;
+      color: rgba(255,255,255,0.8);
+    }
+
+    #btn {
+      margin-top: 2rem;
+      padding: 0.85rem 2.5rem;
+      font-size: 1rem;
+      font-weight: 700;
+      color: #1a1a2e;
+      background: linear-gradient(135deg, #ffcc00, #ffaa00);
+      border: none;
+      border-radius: 999px;
       cursor: pointer;
-      transition: background .2s;
-      white-space: nowrap;
-    }
-    .btn-add:hover { background: #4453d6; }
-    .btn-add:disabled { background: #b0b8f0; cursor: not-allowed; }
-
-    /* Sort bar */
-    .sort-bar {
-      display: flex; align-items: center; gap: 8px;
-      margin-bottom: 14px; font-size: 0.88rem; color: #666;
-    }
-    .sort-bar select {
-      border: 1.5px solid #dde1e9; border-radius: 6px;
-      padding: 5px 10px; font-size: 0.88rem; outline: none; cursor: pointer;
+      box-shadow: 0 4px 20px rgba(255,204,0,0.4);
+      transition: transform 0.15s, box-shadow 0.15s;
+      letter-spacing: 0.05em;
     }
 
-    /* Task list */
-    .task-list { display: flex; flex-direction: column; gap: 10px; }
-    .task-card {
-      background: #fff;
-      border-radius: 10px;
-      padding: 14px 16px;
-      box-shadow: 0 1px 5px rgba(0,0,0,.06);
-      display: flex; align-items: flex-start; gap: 12px;
-      transition: box-shadow .15s;
-    }
-    .task-card:hover { box-shadow: 0 3px 12px rgba(0,0,0,.1); }
-    .task-card.done { opacity: .55; }
-
-    .task-check input[type=checkbox] {
-      width: 18px; height: 18px; margin-top: 2px; cursor: pointer; accent-color: #5b6af0;
+    #btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 28px rgba(255,204,0,0.55);
     }
 
-    .task-body { flex: 1; min-width: 0; }
-    .task-title {
-      font-size: 1rem; font-weight: 500;
-      word-break: break-word;
+    #btn:active {
+      transform: scale(0.97);
     }
-    .task-title.done-text { text-decoration: line-through; color: #999; }
-    .task-meta { display: flex; align-items: center; gap: 8px; margin-top: 6px; flex-wrap: wrap; }
 
-    /* Priority badge */
-    .badge {
-      border-radius: 5px; padding: 2px 8px;
-      font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;
+    #btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
     }
-    .badge-high   { background: #ffe0e0; color: #c0392b; }
-    .badge-medium { background: #fff3cd; color: #b7791f; }
-    .badge-low    { background: #e0f4e0; color: #276749; }
 
-    /* Status badge */
-    .status-badge {
-      border-radius: 5px; padding: 2px 8px;
-      font-size: 0.75rem; font-weight: 600; cursor: pointer; border: none;
+    .placeholder-text {
+      color: rgba(255,255,255,0.4);
+      font-size: 1rem;
+      text-align: center;
     }
-    .status-todo       { background: #e8eaf6; color: #3949ab; }
-    .status-in_progress { background: #fff8e1; color: #f57c00; }
-    .status-done       { background: #e8f5e9; color: #2e7d32; }
 
-    /* Deadline */
-    .deadline { font-size: 0.8rem; color: #666; }
-    .deadline.overdue { color: #e53e3e; font-weight: 600; }
-
-    /* Edit inline */
-    .edit-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; width: 100%; }
-    .edit-row input, .edit-row select {
-      border: 1.5px solid #5b6af0; border-radius: 6px;
-      padding: 5px 8px; font-size: 0.9rem; outline: none;
+    .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.1);
+      border-top-color: #ffcc00;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
     }
-    .edit-row input { flex: 1; min-width: 120px; }
 
-    /* Action buttons */
-    .task-actions { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
-    .btn-icon {
-      background: none; border: none; cursor: pointer;
-      padding: 5px 7px; border-radius: 6px;
-      font-size: 1rem; transition: background .15s;
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
-    .btn-icon:hover { background: #f0f2f5; }
-    .btn-icon.danger:hover { background: #ffe0e0; }
 
-    .empty { text-align: center; color: #aaa; padding: 40px 0; font-size: 1rem; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.92); }
+      to   { opacity: 1; transform: scale(1); }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.35s ease;
+    }
   </style>
 </head>
 <body>
-<div id="root"></div>
-<script type="text/babel">
-const { useState, useEffect, useMemo } = React;
 
-const STORAGE_KEY = 'tasks_v1';
-const PRIORITIES = ['high', 'medium', 'low'];
-const PRIORITY_LABEL = { high: '高', medium: '中', low: '低' };
-const STATUS_LABEL = { todo: '未着手', in_progress: '進行中', done: '完了' };
-const STATUS_CYCLE = { todo: 'in_progress', in_progress: 'done', done: 'todo' };
+<h1>ランダムポケモン</h1>
 
-function loadTasks() {
-  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
-  catch { return []; }
-}
+<div id="card">
+  <p class="placeholder-text">ボタンを押してポケモンを召喚！</p>
+</div>
 
-function saveTasks(tasks) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks));
-}
+<button id="btn" onclick="loadRandom()">ランダムに表示</button>
 
-function isOverdue(deadline) {
-  if (!deadline) return false;
-  return new Date(deadline) < new Date(new Date().toDateString());
-}
+<script>
+  const TYPE_COLORS = {
+    normal:   '#a8a878', fire:     '#f08030', water:    '#6890f0',
+    electric: '#f8d030', grass:    '#78c850', ice:      '#98d8d8',
+    fighting: '#c03028', poison:   '#a040a0', ground:   '#e0c068',
+    flying:   '#a890f0', psychic:  '#f85888', bug:      '#a8b820',
+    rock:     '#b8a038', ghost:    '#705898', dragon:   '#7038f8',
+    dark:     '#705848', steel:    '#b8b8d0', fairy:    '#ee99ac',
+  };
 
-function formatDeadline(deadline) {
-  if (!deadline) return null;
-  const d = new Date(deadline);
-  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`;
-}
+  const STAT_LABELS = {
+    hp:               'HP',
+    attack:           'ATK',
+    defense:          'DEF',
+    'special-attack': 'SpATK',
+    'special-defense':'SpDEF',
+    speed:            'SPD',
+  };
 
-function TaskForm({ onAdd }) {
-  const [title, setTitle] = useState('');
-  const [priority, setPriority] = useState('medium');
-  const [deadline, setDeadline] = useState('');
+  const TOTAL = 1025;
 
-  function handleSubmit(e) {
-    e.preventDefault();
-    if (!title.trim()) return;
-    onAdd({ title: title.trim(), priority, deadline: deadline || null });
-    setTitle(''); setPriority('medium'); setDeadline('');
-  }
+  async function loadRandom() {
+    const btn = document.getElementById('btn');
+    const card = document.getElementById('card');
+    btn.disabled = true;
+    card.classList.add('loading');
+    card.innerHTML = '<div class="spinner"></div>';
 
-  return (
-    <div className="form-card">
-      <form onSubmit={handleSubmit}>
-        <div className="form-row">
-          <input
-            placeholder="タスク名を入力..."
-            value={title}
-            onChange={e => setTitle(e.target.value)}
-          />
-          <select value={priority} onChange={e => setPriority(e.target.value)}>
-            <option value="high">優先度: 高</option>
-            <option value="medium">優先度: 中</option>
-            <option value="low">優先度: 低</option>
-          </select>
-          <input
-            type="date"
-            value={deadline}
-            onChange={e => setDeadline(e.target.value)}
-          />
-          <button className="btn-add" type="submit" disabled={!title.trim()}>
-            ＋ 追加
-          </button>
-        </div>
-      </form>
-    </div>
-  );
-}
+    try {
+      const id = Math.floor(Math.random() * TOTAL) + 1;
+      const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+      if (!res.ok) throw new Error('fetch failed');
+      const data = await res.json();
 
-function TaskItem({ task, onUpdate, onDelete }) {
-  const [editing, setEditing] = useState(false);
-  const [editTitle, setEditTitle] = useState(task.title);
-  const [editPriority, setEditPriority] = useState(task.priority);
-  const [editDeadline, setEditDeadline] = useState(task.deadline || '');
+      const sprite =
+        data.sprites.other?.['official-artwork']?.front_default ||
+        data.sprites.front_default ||
+        '';
 
-  function saveEdit() {
-    if (!editTitle.trim()) return;
-    onUpdate(task.id, { title: editTitle.trim(), priority: editPriority, deadline: editDeadline || null });
-    setEditing(false);
-  }
+      const types = data.types.map(t => t.type.name);
+      const stats = data.stats;
 
-  function cancelEdit() {
-    setEditTitle(task.title); setEditPriority(task.priority); setEditDeadline(task.deadline || '');
-    setEditing(false);
-  }
-
-  function cycleStatus() {
-    onUpdate(task.id, { status: STATUS_CYCLE[task.status] });
-  }
-
-  const overdue = isOverdue(task.deadline) && task.status !== 'done';
-
-  return (
-    <div className={`task-card${task.status === 'done' ? ' done' : ''}`}>
-      <div className="task-check">
-        <input
-          type="checkbox"
-          checked={task.status === 'done'}
-          onChange={() => onUpdate(task.id, { status: task.status === 'done' ? 'todo' : 'done' })}
-        />
-      </div>
-      <div className="task-body">
-        {editing ? (
-          <div className="edit-row">
-            <input value={editTitle} onChange={e => setEditTitle(e.target.value)} autoFocus />
-            <select value={editPriority} onChange={e => setEditPriority(e.target.value)}>
-              <option value="high">高</option>
-              <option value="medium">中</option>
-              <option value="low">低</option>
-            </select>
-            <input type="date" value={editDeadline} onChange={e => setEditDeadline(e.target.value)} />
+      card.classList.remove('loading');
+      card.innerHTML = `
+        <div class="fade-in" style="display:flex;flex-direction:column;align-items:center;width:100%">
+          ${sprite ? `<img id="sprite" src="${sprite}" alt="${data.name}">` : ''}
+          <div id="name">${data.name}</div>
+          <div id="number">No. ${String(data.id).padStart(4,'0')}</div>
+          <div id="types">
+            ${types.map(t => `
+              <span class="type-badge" style="background:${TYPE_COLORS[t] || '#888'}">
+                ${t}
+              </span>
+            `).join('')}
           </div>
-        ) : (
-          <div className={`task-title${task.status === 'done' ? ' done-text' : ''}`}>{task.title}</div>
-        )}
-        <div className="task-meta">
-          <span className={`badge badge-${task.priority}`}>{PRIORITY_LABEL[task.priority]}</span>
-          <button
-            className={`status-badge status-${task.status}`}
-            onClick={cycleStatus}
-            title="クリックでステータス変更"
-          >
-            {STATUS_LABEL[task.status]}
-          </button>
-          {task.deadline && (
-            <span className={`deadline${overdue ? ' overdue' : ''}`}>
-              {overdue ? '⚠ ' : '📅 '}{formatDeadline(task.deadline)}
-            </span>
-          )}
+          <div id="stats">
+            ${stats.map(s => `
+              <div class="stat-row">
+                <span class="stat-label">${STAT_LABELS[s.stat.name] || s.stat.name}</span>
+                <div class="stat-bar-bg">
+                  <div class="stat-bar" style="width:${Math.min(s.base_stat / 255 * 100, 100)}%"></div>
+                </div>
+                <span class="stat-value">${s.base_stat}</span>
+              </div>
+            `).join('')}
+          </div>
         </div>
-      </div>
-      <div className="task-actions">
-        {editing ? (
-          <>
-            <button className="btn-icon" onClick={saveEdit} title="保存">✔</button>
-            <button className="btn-icon" onClick={cancelEdit} title="キャンセル">✖</button>
-          </>
-        ) : (
-          <>
-            <button className="btn-icon" onClick={() => setEditing(true)} title="編集">✏️</button>
-            <button className="btn-icon danger" onClick={() => onDelete(task.id)} title="削除">🗑️</button>
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
-
-const SORT_OPTIONS = [
-  { value: 'createdAt_desc', label: '作成日（新しい順）' },
-  { value: 'createdAt_asc',  label: '作成日（古い順）' },
-  { value: 'priority',       label: '優先度（高い順）' },
-  { value: 'deadline',       label: '期限（近い順）' },
-];
-
-const PRIORITY_ORDER = { high: 0, medium: 1, low: 2 };
-
-function App() {
-  const [tasks, setTasks] = useState(loadTasks);
-  const [sort, setSort] = useState('createdAt_desc');
-
-  useEffect(() => { saveTasks(tasks); }, [tasks]);
-
-  function addTask({ title, priority, deadline }) {
-    const task = {
-      id: crypto.randomUUID(),
-      title, priority, deadline,
-      status: 'todo',
-      createdAt: new Date().toISOString(),
-    };
-    setTasks(prev => [task, ...prev]);
-  }
-
-  function updateTask(id, patch) {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...patch } : t));
-  }
-
-  function deleteTask(id) {
-    if (!confirm('このタスクを削除しますか？')) return;
-    setTasks(prev => prev.filter(t => t.id !== id));
-  }
-
-  const sorted = useMemo(() => {
-    const arr = [...tasks];
-    if (sort === 'priority') {
-      arr.sort((a, b) => PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority]);
-    } else if (sort === 'deadline') {
-      arr.sort((a, b) => {
-        if (!a.deadline && !b.deadline) return 0;
-        if (!a.deadline) return 1;
-        if (!b.deadline) return -1;
-        return a.deadline.localeCompare(b.deadline);
-      });
-    } else if (sort === 'createdAt_asc') {
-      arr.sort((a, b) => a.createdAt.localeCompare(b.createdAt));
-    } else {
-      arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+      `;
+    } catch (e) {
+      card.innerHTML = '<p class="placeholder-text">エラーが発生しました。<br>もう一度お試しください。</p>';
+    } finally {
+      btn.disabled = false;
     }
-    return arr;
-  }, [tasks, sort]);
-
-  const counts = useMemo(() => ({
-    total: tasks.length,
-    done: tasks.filter(t => t.status === 'done').length,
-    overdue: tasks.filter(t => isOverdue(t.deadline) && t.status !== 'done').length,
-  }), [tasks]);
-
-  return (
-    <div>
-      <h1>📋 タスク管理</h1>
-      <TaskForm onAdd={addTask} />
-      <div className="sort-bar">
-        <span>タスク {counts.total}件</span>
-        {counts.done > 0 && <span>✅ 完了 {counts.done}</span>}
-        {counts.overdue > 0 && <span style={{color:'#e53e3e'}}>⚠ 期限切れ {counts.overdue}</span>}
-        <div style={{flex:1}} />
-        <span>並び替え:</span>
-        <select value={sort} onChange={e => setSort(e.target.value)}>
-          {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-      </div>
-      <div className="task-list">
-        {sorted.length === 0
-          ? <div className="empty">タスクがありません。上のフォームから追加してください。</div>
-          : sorted.map(task =>
-              <TaskItem key={task.id} task={task} onUpdate={updateTask} onDelete={deleteTask} />
-            )
-        }
-      </div>
-    </div>
-  );
-}
-
-ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  }
 </script>
 </body>
 </html>
