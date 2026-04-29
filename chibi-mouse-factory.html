@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🧀 ちびっこマウス・ファクトリー</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --cream:#FFF8E7; --orange:#FFB347; --brown:#5D4037;
+  --gold:#FFD700; --soft-blue:#E0F0FF;
+}
+body {
+  font-family:'Segoe UI','Helvetica Neue',sans-serif;
+  background:var(--cream);
+  height:100vh;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  color:var(--brown);
+}
+
+/* ── HEADER ── */
+header {
+  background:linear-gradient(90deg,#FF8C42,#FFB347,#FFCC70);
+  padding:10px 18px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  flex-shrink:0;
+  box-shadow:0 2px 10px rgba(0,0,0,.15);
+}
+header h1 {
+  color:#fff;
+  font-size:1.1em;
+  text-shadow:1px 1px 4px rgba(0,0,0,.2);
+  white-space:nowrap;
+}
+.stats { display:flex; gap:10px; }
+.stat {
+  background:rgba(255,255,255,.35);
+  border-radius:10px;
+  padding:4px 11px;
+  text-align:center;
+  min-width:72px;
+}
+.stat-val { font-size:1.05em; font-weight:bold; }
+.stat-lbl { font-size:.62em; opacity:.85; }
+
+/* ── MAIN ── */
+main { display:flex; flex:1; overflow:hidden; }
+
+/* Game area */
+#game {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:14px;
+  padding:16px;
+  position:relative;
+  overflow:hidden;
+}
+
+/* Background sparkles */
+#game::before {
+  content:'🧀';
+  position:absolute;
+  font-size:120px;
+  opacity:.04;
+  top:50%; left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
+/* Gold bonus badge */
+#gold-badge {
+  display:none;
+  background:linear-gradient(135deg,#FFD700,#FF8C00);
+  color:#fff;
+  font-size:.78em;
+  font-weight:bold;
+  padding:4px 14px;
+  border-radius:12px;
+  box-shadow:0 2px 8px rgba(255,165,0,.4);
+}
+
+/* Cheese */
+#cheese-wrap {
+  position:relative;
+  cursor:pointer;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+#cheese {
+  font-size:128px;
+  line-height:1;
+  display:block;
+  animation:bob 3s ease-in-out infinite;
+  filter:drop-shadow(0 6px 20px rgba(255,180,0,.5));
+  transition:transform .08s;
+}
+#cheese-wrap:active #cheese {
+  animation:none;
+  transform:scale(.86);
+  filter:drop-shadow(0 2px 8px rgba(255,150,0,.6));
+}
+@keyframes bob {
+  0%,100%{ transform:scale(1) rotate(-1deg); }
+  50%    { transform:scale(1.04) rotate(1deg); }
+}
+
+/* Click stats */
+.click-lbl { font-size:.83em; color:#9E8A7A; }
+
+/* Progress bar */
+.prog-wrap { width:220px; text-align:center; }
+.prog-bg {
+  height:10px;
+  background:#FFE0A0;
+  border-radius:5px;
+  overflow:hidden;
+  margin-bottom:5px;
+}
+.prog-fill {
+  height:100%;
+  background:linear-gradient(90deg,#FFB347,#FFD700);
+  border-radius:5px;
+  transition:width .5s ease;
+  width:0%;
+}
+.prog-lbl { font-size:.73em; color:#9E8A7A; }
+
+/* Prestige button */
+#prestige-btn {
+  display:none;
+  background:linear-gradient(135deg,#FFD700,#FF8C00);
+  color:#fff;
+  border:none;
+  border-radius:22px;
+  padding:10px 24px;
+  font-size:.95em;
+  font-weight:bold;
+  cursor:pointer;
+  animation:glow 2s ease-in-out infinite;
+}
+@keyframes glow {
+  0%,100%{ box-shadow:0 0 12px rgba(255,200,0,.4); }
+  50%    { box-shadow:0 0 28px rgba(255,200,0,.95); }
+}
+#prestige-btn:active { transform:scale(.96); }
+
+/* Reset link */
+#reset-link {
+  font-size:.65em;
+  color:#CCC;
+  cursor:pointer;
+  position:absolute;
+  bottom:8px;
+  right:12px;
+  text-decoration:underline;
+}
+#reset-link:hover { color:#999; }
+
+/* ── SHOP ── */
+#shop {
+  width:290px;
+  background:rgba(255,255,255,.72);
+  backdrop-filter:blur(10px);
+  border-left:2px solid rgba(255,179,71,.3);
+  overflow-y:auto;
+  padding:10px 8px;
+  flex-shrink:0;
+}
+#shop::-webkit-scrollbar { width:4px; }
+#shop::-webkit-scrollbar-thumb { background:#FFB347; border-radius:2px; }
+#shop h2 {
+  text-align:center;
+  color:var(--orange);
+  font-size:.97em;
+  margin-bottom:8px;
+  padding-bottom:6px;
+  border-bottom:2px dashed #FFD48C;
+}
+.sec-title {
+  font-size:.68em;
+  font-weight:bold;
+  color:#9E8A7A;
+  padding:3px 8px;
+  background:rgba(255,179,71,.15);
+  border-radius:8px;
+  margin:6px 0 5px;
+}
+.item {
+  display:flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 9px;
+  background:#fff;
+  border:2px solid #FFE0A0;
+  border-radius:12px;
+  margin-bottom:5px;
+  cursor:pointer;
+  transition:all .13s;
+}
+.item:hover:not(.locked):not(.done) {
+  border-color:var(--orange);
+  background:#FFF8E7;
+  transform:translateX(3px);
+}
+.item.locked { opacity:.42; cursor:not-allowed; }
+.item.done { background:#F0FFF0; border-color:#8BC34A; cursor:default; }
+.item-ico { font-size:1.45em; width:30px; text-align:center; }
+.item-info { flex:1; overflow:hidden; }
+.item-name { font-size:.8em; font-weight:bold; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.item-desc { font-size:.67em; color:#9E8A7A; }
+.item-right { text-align:right; flex-shrink:0; }
+.item-cost { font-size:.78em; font-weight:bold; color:var(--orange); }
+.item-cnt {
+  background:var(--orange);
+  color:#fff;
+  border-radius:8px;
+  padding:1px 6px;
+  font-size:.73em;
+  font-weight:bold;
+  display:inline-block;
+  margin-top:2px;
+}
+
+/* ── PARADE ── */
+#parade {
+  height:70px;
+  background:linear-gradient(180deg,#E0F0FF,#C5E0FA);
+  border-top:3px solid rgba(255,179,71,.35);
+  position:relative;
+  overflow:hidden;
+  flex-shrink:0;
+}
+.ground {
+  position:absolute;
+  bottom:0; left:0; right:0;
+  height:14px;
+  background:linear-gradient(180deg,#8BC34A,#6EA832);
+  border-radius:3px 3px 0 0;
+}
+.pmouse {
+  position:absolute;
+  bottom:14px;
+  font-size:1.55em;
+  animation:march linear infinite;
+  will-change:transform;
+}
+@keyframes march {
+  from { transform:translateX(-60px) scaleX(1); }
+  to   { transform:translateX(calc(100vw + 60px)) scaleX(1); }
+}
+
+/* ── FLOATING PARTICLES ── */
+.particle {
+  position:fixed;
+  pointer-events:none;
+  font-weight:bold;
+  color:#D46000;
+  text-shadow:0 1px 4px rgba(0,0,0,.18);
+  font-size:1.08em;
+  animation:rise .95s ease-out forwards;
+  z-index:300;
+  white-space:nowrap;
+}
+@keyframes rise {
+  from { opacity:1; transform:translateY(0) scale(1); }
+  to   { opacity:0; transform:translateY(-75px) scale(.65); }
+}
+.mpop {
+  position:fixed;
+  pointer-events:none;
+  font-size:1.55em;
+  animation:mpop .75s ease-out forwards;
+  z-index:299;
+}
+@keyframes mpop {
+  0%  { opacity:1; transform:translate(0,0) scale(1.3); }
+  100%{ opacity:0; transform:translate(var(--tx),var(--ty)) scale(.3); }
+}
+
+/* ── TOAST ── */
+#toast {
+  position:fixed;
+  bottom:82px;
+  left:50%;
+  transform:translateX(-50%);
+  background:rgba(50,28,8,.88);
+  color:#fff;
+  padding:8px 22px;
+  border-radius:18px;
+  font-size:.86em;
+  z-index:500;
+  opacity:0;
+  transition:opacity .3s;
+  pointer-events:none;
+  white-space:nowrap;
+}
+#toast.show { opacity:1; }
+
+/* ── MOBILE ── */
+@media (max-width:620px){
+  header h1 { font-size:.9em; }
+  main { flex-direction:column; }
+  #shop {
+    width:100%; height:45%;
+    border-left:none;
+    border-top:2px solid rgba(255,179,71,.3);
+  }
+  #game { padding:8px; gap:8px; }
+  #cheese { font-size:88px; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🧀 ちびっこマウス・ファクトリー</h1>
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-val" id="s-coins">0</div>
+      <div class="stat-lbl">🪙 コイン</div>
+    </div>
+    <div class="stat">
+      <div class="stat-val" id="s-cps">0</div>
+      <div class="stat-lbl">⚡ /秒</div>
+    </div>
+    <div class="stat" id="gold-stat" style="display:none">
+      <div class="stat-val" id="s-gold">0</div>
+      <div class="stat-lbl">⭐ 黄金チーズ</div>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div id="game">
+    <div id="gold-badge">⭐ ×<span id="gold-mult">1.00</span> ボーナス中！</div>
+    <div id="cheese-wrap">
+      <span id="cheese">🧀</span>
+    </div>
+    <div class="click-lbl">1タップ = <span id="s-click">1</span> コイン</div>
+    <div class="prog-wrap">
+      <div class="prog-bg"><div class="prog-fill" id="prog"></div></div>
+      <div class="prog-lbl">転生まで <span id="s-goal">10,000</span> コイン獲得</div>
+    </div>
+    <button id="prestige-btn">✨ 転生！ 黄金チーズを獲得！</button>
+    <span id="reset-link" title="セーブデータを削除">リセット</span>
+  </div>
+
+  <div id="shop">
+    <h2>🛒 ショップ</h2>
+    <div class="sec-title">🐭 ネズミを雇う</div>
+    <div id="s-mice"></div>
+    <div class="sec-title">💪 クリック強化</div>
+    <div id="s-cupg"></div>
+    <div class="sec-title">🏭 設備投資</div>
+    <div id="s-equip"></div>
+  </div>
+</main>
+
+<div id="parade">
+  <div class="ground"></div>
+  <div id="parade-inner"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════
+//  GAME STATE
+// ═══════════════════════════════
+const G = {
+  coins: 0,
+  total: 0,
+  golden: 0,
+  prestMult: 1,
+  prestGoal: 10000,
+  prestThresh: 10000,
+
+  mice: [
+    { id:'a', name:'ネズミ見習い',    ico:'🐭', desc:'+0.1/秒',  cps:.1,  base:10,     cnt:0 },
+    { id:'b', name:'ネズミ職人',      ico:'🐹', desc:'+0.8/秒',  cps:.8,  base:110,    cnt:0 },
+    { id:'c', name:'チームリーダー',  ico:'🦊', desc:'+6/秒',    cps:6,   base:1200,   cnt:0 },
+    { id:'d', name:'エンジニアネズミ',ico:'🦔', desc:'+47/秒',   cps:47,  base:13000,  cnt:0 },
+    { id:'e', name:'科学者ネズミ',    ico:'🐀', desc:'+260/秒',  cps:260, base:140000, cnt:0 },
+  ],
+
+  cUpgs: [
+    { id:'c1', name:'爪の強化',       ico:'💅', desc:'クリック ×3',  mult:3,  cost:50,    done:false },
+    { id:'c2', name:'特製バッグ',     ico:'👜', desc:'クリック ×5',  mult:5,  cost:500,   done:false },
+    { id:'c3', name:'パワードスーツ', ico:'🦾', desc:'クリック ×10', mult:10, cost:8000,  done:false },
+    { id:'c4', name:'レーザーカッター',ico:'⚡',desc:'クリック ×20', mult:20, cost:80000, done:false },
+  ],
+
+  equip: [
+    { id:'e1', name:'滑り台',        ico:'🎿', desc:'全収益 ×1.5', mult:1.5, cost:500,    done:false },
+    { id:'e2', name:'ベルトコンベア', ico:'📦', desc:'全収益 ×2',   mult:2,   cost:5000,   done:false },
+    { id:'e3', name:'ドローン配送',  ico:'🚁', desc:'全収益 ×3',   mult:3,   cost:60000,  done:false },
+    { id:'e4', name:'チーズ精製機',  ico:'🏭', desc:'全収益 ×5',   mult:5,   cost:700000, done:false },
+  ],
+};
+
+// ═══════════════════════════════
+//  COMPUTED VALUES
+// ═══════════════════════════════
+const mouseCost = m => Math.ceil(m.base * Math.pow(1.15, m.cnt));
+const equipMult = () => G.equip.filter(e=>e.done).reduce((a,e)=>a*e.mult, 1);
+const clickMult = () => G.cUpgs.filter(u=>u.done).reduce((a,u)=>a*u.mult, 1);
+const getCPS    = () => G.mice.reduce((s,m)=>s+m.cps*m.cnt, 0) * equipMult() * G.prestMult;
+const getClick  = () => Math.ceil(clickMult() * G.prestMult);
+
+// ═══════════════════════════════
+//  FORMAT
+// ═══════════════════════════════
+function fmt(n) {
+  n = Math.floor(n);
+  if (n >= 1e16) return (n/1e16).toFixed(1)+'京';
+  if (n >= 1e12) return (n/1e12).toFixed(1)+'兆';
+  if (n >= 1e8)  return (n/1e8).toFixed(1)+'億';
+  if (n >= 1e4)  return (n/1e4).toFixed(1)+'万';
+  return n.toLocaleString('ja-JP');
+}
+
+// ═══════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════
+function buyMouse(m) {
+  const cost = mouseCost(m);
+  if (G.coins < cost) return;
+  G.coins -= cost;
+  m.cnt++;
+  refreshParade();
+  toast(`${m.ico} ${m.name} を雇いました！`);
+}
+
+function buyClickUpg(u) {
+  if (u.done || G.coins < u.cost) return;
+  G.coins -= u.cost;
+  u.done = true;
+  toast(`${u.ico} ${u.name} 購入！クリック強化！`);
+}
+
+function buyEquip(e) {
+  if (e.done || G.coins < e.cost) return;
+  G.coins -= e.cost;
+  e.done = true;
+  toast(`${e.ico} ${e.name} 設置完了！収益アップ！`);
+}
+
+function doPrestige() {
+  if (G.total < G.prestThresh) return;
+  G.golden++;
+  G.prestMult = 1 + G.golden * 0.25;
+  G.prestGoal  = Math.floor(G.prestGoal  * 8);
+  G.prestThresh= Math.floor(G.prestThresh* 8);
+  G.coins = 0; G.total = 0;
+  G.mice.forEach(m => m.cnt = 0);
+  G.cUpgs.forEach(u => u.done = false);
+  G.equip.forEach(e => e.done = false);
+  refreshParade();
+  document.getElementById('prestige-btn').style.display = 'none';
+  showGoldUI();
+  toast(`✨ 転生！黄金チーズ×${G.golden}！全収益が${G.prestMult.toFixed(2)}倍に！`);
+}
+
+function showGoldUI() {
+  document.getElementById('gold-stat').style.display = '';
+  document.getElementById('gold-badge').style.display = 'block';
+}
+
+// ═══════════════════════════════
+//  CLICK HANDLER
+// ═══════════════════════════════
+document.getElementById('cheese-wrap').addEventListener('click', ev => {
+  const earned = getClick();
+  G.coins += earned;
+  G.total  += earned;
+  spawnParticle(ev.clientX, ev.clientY, '+' + fmt(earned));
+  spawnMousePop(ev.clientX, ev.clientY);
+  checkMilestone();
+});
+
+document.getElementById('prestige-btn').addEventListener('click', doPrestige);
+
+document.getElementById('reset-link').addEventListener('click', () => {
+  if (confirm('セーブデータを削除してリセットしますか？')) {
+    localStorage.removeItem('cmf');
+    location.reload();
+  }
+});
+
+// ═══════════════════════════════
+//  EFFECTS
+// ═══════════════════════════════
+function spawnParticle(x, y, txt) {
+  const el = document.createElement('div');
+  el.className = 'particle';
+  el.textContent = txt;
+  el.style.cssText = `left:${x}px;top:${y}px`;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 960);
+}
+
+function spawnMousePop(x, y) {
+  const el = document.createElement('div');
+  el.className = 'mpop';
+  el.style.setProperty('--tx', ((Math.random()-.5)*130)+'px');
+  el.style.setProperty('--ty', (-(40+Math.random()*60))+'px');
+  el.style.cssText += `left:${x}px;top:${y}px`;
+  el.textContent = '🐭';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 750);
+}
+
+// ═══════════════════════════════
+//  PARADE
+// ═══════════════════════════════
+function refreshParade() {
+  const container = document.getElementById('parade-inner');
+  const total  = G.mice.reduce((s,m)=>s+m.cnt, 0);
+  const show   = Math.min(total, 22);
+  const icons  = G.mice.filter(m=>m.cnt>0).map(m=>m.ico);
+  if (!icons.length) icons.push('🐭');
+
+  while (container.children.length > show) container.lastChild.remove();
+  while (container.children.length < show) {
+    const el = document.createElement('div');
+    el.className = 'pmouse';
+    el.textContent = icons[Math.floor(Math.random()*icons.length)];
+    const dur = 3.5 + Math.random()*5;
+    el.style.animationDuration = dur+'s';
+    el.style.animationDelay   = (-(Math.random()*dur))+'s';
+    el.style.bottom            = (14 + Math.floor(Math.random()*26))+'px';
+    container.appendChild(el);
+  }
+}
+
+// ═══════════════════════════════
+//  SHOP RENDER
+// ═══════════════════════════════
+function renderShop() {
+  document.getElementById('s-mice').innerHTML = G.mice.map(m => {
+    const cost   = mouseCost(m);
+    const locked = G.coins < cost;
+    return `<div class="item ${locked?'locked':''}" data-id="${m.id}" data-type="mouse">
+      <div class="item-ico">${m.ico}</div>
+      <div class="item-info">
+        <div class="item-name">${m.name}</div>
+        <div class="item-desc">${m.desc}</div>
+      </div>
+      <div class="item-right">
+        <div class="item-cost">🪙${fmt(cost)}</div>
+        ${m.cnt?`<div class="item-cnt">${m.cnt}</div>`:''}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('s-cupg').innerHTML = G.cUpgs.map(u => {
+    const locked = !u.done && G.coins < u.cost;
+    return `<div class="item ${u.done?'done':locked?'locked':''}" data-id="${u.id}" data-type="cupg">
+      <div class="item-ico">${u.ico}</div>
+      <div class="item-info">
+        <div class="item-name">${u.name}</div>
+        <div class="item-desc">${u.desc}</div>
+      </div>
+      <div class="item-right">
+        <div class="item-cost">${u.done?'✅':'🪙'+fmt(u.cost)}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('s-equip').innerHTML = G.equip.map(e => {
+    const locked = !e.done && G.coins < e.cost;
+    return `<div class="item ${e.done?'done':locked?'locked':''}" data-id="${e.id}" data-type="equip">
+      <div class="item-ico">${e.ico}</div>
+      <div class="item-info">
+        <div class="item-name">${e.name}</div>
+        <div class="item-desc">${e.desc}</div>
+      </div>
+      <div class="item-right">
+        <div class="item-cost">${e.done?'✅':'🪙'+fmt(e.cost)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Event delegation for shop
+document.getElementById('shop').addEventListener('click', ev => {
+  const item = ev.target.closest('.item[data-id]');
+  if (!item || item.classList.contains('locked') || item.classList.contains('done')) return;
+  const id   = item.dataset.id;
+  const type = item.dataset.type;
+  if (type === 'mouse') { const m = G.mice.find(x=>x.id===id);  if (m) buyMouse(m); }
+  if (type === 'cupg')  { const u = G.cUpgs.find(x=>x.id===id); if (u) buyClickUpg(u); }
+  if (type === 'equip') { const e = G.equip.find(x=>x.id===id); if (e) buyEquip(e); }
+});
+
+// ═══════════════════════════════
+//  HUD UPDATE
+// ═══════════════════════════════
+function updateHUD() {
+  document.getElementById('s-coins').textContent = fmt(G.coins);
+  document.getElementById('s-cps').textContent   = fmt(getCPS());
+  document.getElementById('s-click').textContent = fmt(getClick());
+  if (G.golden > 0) {
+    document.getElementById('s-gold').textContent   = G.golden;
+    document.getElementById('gold-mult').textContent = G.prestMult.toFixed(2);
+  }
+  const pct = Math.min(G.total / G.prestGoal * 100, 100);
+  document.getElementById('prog').style.width = pct + '%';
+  document.getElementById('s-goal').textContent = fmt(G.prestGoal);
+  if (G.total >= G.prestThresh) {
+    document.getElementById('prestige-btn').style.display = 'block';
+  }
+}
+
+// ═══════════════════════════════
+//  MILESTONES
+// ═══════════════════════════════
+const MILESTONES = [
+  [100,     '🎉 100コイン！ネズミたちが喜んでいます！'],
+  [1000,    '🎊 1,000コイン！ネズミ王国が広がっていく！'],
+  [10000,   '🏆 10,000コイン！もうすぐ転生できるよ！'],
+  [100000,  '🌟 10万コイン！すごい！チーズの山だ！'],
+  [1000000, '👑 100万コイン！伝説のチーズ王！'],
+];
+let nextMS = 0;
+
+function checkMilestone() {
+  while (nextMS < MILESTONES.length && G.total >= MILESTONES[nextMS][0]) {
+    toast(MILESTONES[nextMS][1]);
+    nextMS++;
+  }
+}
+
+function initMilestones() {
+  nextMS = MILESTONES.findIndex(([v])=>G.total < v);
+  if (nextMS === -1) nextMS = MILESTONES.length;
+}
+
+// ═══════════════════════════════
+//  SAVE / LOAD
+// ═══════════════════════════════
+function save() {
+  localStorage.setItem('cmf', JSON.stringify({
+    c:G.coins, t:G.total, g:G.golden,
+    pm:G.prestMult, pg:G.prestGoal, pt:G.prestThresh,
+    mc:G.mice.map(m=>m.cnt),
+    cu:G.cUpgs.map(u=>u.done),
+    eq:G.equip.map(e=>e.done),
+  }));
+}
+
+function load() {
+  try {
+    const d = JSON.parse(localStorage.getItem('cmf'));
+    if (!d) return;
+    G.coins=d.c||0; G.total=d.t||0; G.golden=d.g||0;
+    G.prestMult=d.pm||1; G.prestGoal=d.pg||10000; G.prestThresh=d.pt||10000;
+    if (d.mc) d.mc.forEach((v,i)=>{ if(G.mice[i])  G.mice[i].cnt  = v; });
+    if (d.cu) d.cu.forEach((v,i)=>{ if(G.cUpgs[i]) G.cUpgs[i].done= v; });
+    if (d.eq) d.eq.forEach((v,i)=>{ if(G.equip[i]) G.equip[i].done= v; });
+    if (G.golden > 0) showGoldUI();
+    refreshParade();
+  } catch(_) {}
+}
+
+// ═══════════════════════════════
+//  TOAST
+// ═══════════════════════════════
+let toastTm;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTm);
+  toastTm = setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+// ═══════════════════════════════
+//  GAME LOOP
+// ═══════════════════════════════
+let lastTick = Date.now();
+
+function tick() {
+  const now = Date.now();
+  const dt  = Math.min((now - lastTick) / 1000, 1);
+  lastTick  = now;
+  const earned = getCPS() * dt;
+  if (earned > 0) { G.coins += earned; G.total += earned; }
+  checkMilestone();
+  updateHUD();
+}
+
+// ═══════════════════════════════
+//  INIT
+// ═══════════════════════════════
+load();
+initMilestones();
+renderShop();
+updateHUD();
+setInterval(tick, 100);
+setInterval(renderShop, 500);
+setInterval(save, 10000);
+setTimeout(() => toast('🧀 チーズをタップしてネズミを呼ぼう！'), 600);
+</script>
+</body>
+</html>
