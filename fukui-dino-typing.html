@@ -5,1192 +5,907 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>福井弁恐竜タイピング</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-    background: linear-gradient(135deg, #1a0533 0%, #0d1f4c 50%, #1a3a1a 100%);
-    min-height: 100vh;
-    color: #fff;
-    overflow: hidden;
-  }
-
-  /* ===== TITLE SCREEN ===== */
-  #title-screen {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    gap: 24px;
-    position: relative;
-  }
-
-  .title-dinos {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: space-around;
-    align-items: flex-end;
-    pointer-events: none;
-    overflow: hidden;
-  }
-
-  .title-dino-emoji {
-    font-size: 80px;
-    animation: titleBounce 1.5s ease-in-out infinite;
-    opacity: 0.3;
-  }
-
-  .title-dino-emoji:nth-child(2) { animation-delay: 0.3s; }
-  .title-dino-emoji:nth-child(3) { animation-delay: 0.6s; }
-  .title-dino-emoji:nth-child(4) { animation-delay: 0.9s; }
-
-  @keyframes titleBounce {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-  }
-
-  .game-title {
-    font-size: 52px;
-    font-weight: 900;
-    text-align: center;
-    line-height: 1.2;
-    text-shadow: 0 0 30px rgba(255,220,50,0.8);
-    position: relative;
-    z-index: 1;
-  }
-
-  .game-title .line1 { color: #FFD700; }
-  .game-title .line2 { color: #7CFC00; font-size: 36px; }
-
-  .title-sub {
-    font-size: 18px;
-    color: #aaa;
-    text-align: center;
-    position: relative;
-    z-index: 1;
-  }
-
-  .difficulty-section {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 12px;
-    position: relative;
-    z-index: 1;
-  }
-
-  .difficulty-label {
-    font-size: 16px;
-    color: #ccc;
-  }
-
-  .difficulty-buttons {
-    display: flex;
-    gap: 12px;
-  }
-
-  .diff-btn {
-    padding: 10px 24px;
-    border-radius: 25px;
-    border: 2px solid transparent;
-    font-size: 16px;
-    font-weight: bold;
-    cursor: pointer;
-    transition: all 0.2s;
-    background: rgba(255,255,255,0.1);
-    color: #fff;
-  }
-
-  .diff-btn.selected, .diff-btn:hover {
-    background: rgba(255,255,255,0.3);
-    border-color: #FFD700;
-    transform: scale(1.05);
-  }
-
-  .diff-btn.easy { border-color: #7CFC00; }
-  .diff-btn.normal { border-color: #FFD700; }
-  .diff-btn.hard { border-color: #FF6347; }
-  .diff-btn.easy.selected { background: rgba(124,252,0,0.2); }
-  .diff-btn.normal.selected { background: rgba(255,215,0,0.2); }
-  .diff-btn.hard.selected { background: rgba(255,99,71,0.2); }
-
-  .start-btn {
-    padding: 18px 64px;
-    border-radius: 50px;
-    border: none;
-    font-size: 24px;
-    font-weight: 900;
-    cursor: pointer;
-    background: linear-gradient(135deg, #FFD700, #FF8C00);
-    color: #1a0533;
-    box-shadow: 0 0 30px rgba(255,215,0,0.5);
-    transition: all 0.2s;
-    position: relative;
-    z-index: 1;
-    letter-spacing: 2px;
-  }
-
-  .start-btn:hover {
-    transform: scale(1.08);
-    box-shadow: 0 0 50px rgba(255,215,0,0.8);
-  }
-
-  /* ===== GAME SCREEN ===== */
-  #game-screen {
-    display: none;
-    height: 100vh;
-    flex-direction: column;
-    padding: 12px 20px;
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* HUD */
-  .hud {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 10px;
-    flex-shrink: 0;
-  }
-
-  .hud-item {
-    text-align: center;
-    min-width: 80px;
-  }
-
-  .hud-label {
-    font-size: 11px;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .hud-value {
-    font-size: 28px;
-    font-weight: 900;
-    color: #FFD700;
-  }
-
-  .timer-display {
-    font-size: 42px;
-    font-weight: 900;
-    color: #fff;
-  }
-
-  .timer-display.danger { color: #FF4444; animation: pulse 0.5s ease-in-out infinite; }
-
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-  }
-
-  .combo-display {
-    font-size: 20px;
-    color: #FF8C00;
-    font-weight: bold;
-  }
-
-  .combo-display.big { font-size: 28px; color: #FFD700; animation: comboPop 0.3s ease-out; }
-
-  @keyframes comboPop {
-    0% { transform: scale(1.5); }
-    100% { transform: scale(1); }
-  }
-
-  /* DINO AREA */
-  .dino-arena {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    min-height: 0;
-  }
-
-  .dino-name-badge {
-    background: rgba(0,0,0,0.5);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 20px;
-    padding: 6px 20px;
-    font-size: 14px;
-    color: #ccc;
-    margin-bottom: 8px;
-  }
-
-  .dino-name-badge span { color: #7CFC00; font-weight: bold; }
-
-  .dino-hp-bar-wrap {
-    width: 220px;
-    height: 14px;
-    background: rgba(0,0,0,0.4);
-    border-radius: 7px;
-    border: 1px solid rgba(255,255,255,0.2);
-    overflow: hidden;
-    margin-bottom: 6px;
-  }
-
-  .dino-hp-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #FF4444, #FF8C00);
-    border-radius: 7px;
-    transition: width 0.3s ease;
-  }
-
-  .dino-hp-text {
-    font-size: 12px;
-    color: #aaa;
-    margin-bottom: 12px;
-  }
-
-  /* DINO SVG AREA */
-  .dino-container {
-    position: relative;
-    width: 320px;
-    height: 200px;
-    display: flex;
-    align-items: flex-end;
-    justify-content: center;
-  }
-
-  .dino-svg {
-    width: 200px;
-    height: 180px;
-    animation: dinoIdle 1.2s ease-in-out infinite;
-    transition: transform 0.2s;
-    filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5));
-  }
-
-  @keyframes dinoIdle {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    50% { transform: translateY(-8px) rotate(1deg); }
-  }
-
-  .dino-svg.hit {
-    animation: dinoHit 0.4s ease-out;
-  }
-
-  @keyframes dinoHit {
-    0% { transform: translateX(0); filter: brightness(3) drop-shadow(0 0 20px #FF4444); }
-    25% { transform: translateX(20px) rotate(10deg); }
-    50% { transform: translateX(-10px) rotate(-5deg); }
-    75% { transform: translateX(5px); filter: brightness(1.5); }
-    100% { transform: translateX(0); filter: drop-shadow(0 10px 20px rgba(0,0,0,0.5)); }
-  }
-
-  .dino-svg.defeated {
-    animation: dinoDefeat 0.6s ease-out forwards;
-  }
-
-  @keyframes dinoDefeat {
-    0% { transform: translateY(0) rotate(0); opacity: 1; }
-    50% { transform: translateY(-20px) rotate(20deg); }
-    100% { transform: translateY(100px) rotate(45deg); opacity: 0; }
-  }
-
-  /* EFFECTS */
-  .effect-layer {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    overflow: hidden;
-  }
-
-  .slash-effect {
-    position: absolute;
-    font-size: 60px;
-    animation: slashAnim 0.5s ease-out forwards;
-    pointer-events: none;
-  }
-
-  @keyframes slashAnim {
-    0% { transform: scale(0.5) rotate(-20deg); opacity: 1; }
-    100% { transform: scale(2) rotate(20deg); opacity: 0; }
-  }
-
-  .score-popup {
-    position: absolute;
-    font-size: 24px;
-    font-weight: 900;
-    color: #FFD700;
-    text-shadow: 0 0 10px rgba(255,215,0,0.8);
-    animation: scoreFloat 1s ease-out forwards;
-    pointer-events: none;
-    white-space: nowrap;
-  }
-
-  @keyframes scoreFloat {
-    0% { transform: translateY(0); opacity: 1; }
-    100% { transform: translateY(-60px); opacity: 0; }
-  }
-
-  /* TYPING AREA */
-  .typing-section {
-    flex-shrink: 0;
-    padding: 12px 0 8px;
-  }
-
-  .question-box {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.15);
-    border-radius: 16px;
-    padding: 14px 20px;
-    margin-bottom: 10px;
-  }
-
-  .question-label {
-    font-size: 11px;
-    color: #888;
-    margin-bottom: 6px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-
-  .question-text {
-    font-size: 26px;
-    font-weight: 700;
-    line-height: 1.4;
-    letter-spacing: 1px;
-    min-height: 40px;
-  }
-
-  .char-correct { color: #7CFC00; }
-  .char-wrong { color: #FF4444; background: rgba(255,68,68,0.2); border-radius: 2px; }
-  .char-pending { color: #fff; }
-  .char-current { color: #FFD700; border-bottom: 2px solid #FFD700; }
-
-  .input-box {
-    background: rgba(255,255,255,0.1);
-    border: 2px solid rgba(255,255,255,0.3);
-    border-radius: 12px;
-    padding: 12px 18px;
-    font-size: 22px;
-    color: #fff;
-    width: 100%;
-    outline: none;
-    caret-color: #FFD700;
-    letter-spacing: 1px;
-    transition: border-color 0.2s;
-  }
-
-  .input-box:focus { border-color: #FFD700; }
-  .input-box.correct { border-color: #7CFC00; }
-  .input-box.wrong { border-color: #FF4444; background: rgba(255,68,68,0.1); }
-
-  /* RESULT SCREEN */
-  #result-screen {
-    display: none;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-    gap: 20px;
-    padding: 20px;
-  }
-
-  .result-title {
-    font-size: 44px;
-    font-weight: 900;
-    color: #FFD700;
-    text-shadow: 0 0 30px rgba(255,215,0,0.6);
-  }
-
-  .result-cards {
-    display: flex;
-    gap: 16px;
-    flex-wrap: wrap;
-    justify-content: center;
-  }
-
-  .result-card {
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 16px;
-    padding: 20px 28px;
-    text-align: center;
-    min-width: 130px;
-  }
-
-  .result-card-label {
-    font-size: 12px;
-    color: #aaa;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 8px;
-  }
-
-  .result-card-value {
-    font-size: 40px;
-    font-weight: 900;
-    color: #FFD700;
-  }
-
-  .result-card-unit {
-    font-size: 14px;
-    color: #888;
-  }
-
-  .result-rank {
-    font-size: 56px;
-    background: linear-gradient(135deg, #FFD700, #FF8C00);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-weight: 900;
-  }
-
-  .result-comment {
-    font-size: 20px;
-    color: #ccc;
-    text-align: center;
-  }
-
-  .result-dino-list {
-    background: rgba(0,0,0,0.3);
-    border-radius: 12px;
-    padding: 12px 20px;
-    max-width: 500px;
-    width: 100%;
-    max-height: 120px;
-    overflow-y: auto;
-  }
-
-  .result-dino-list-label {
-    font-size: 12px;
-    color: #888;
-    margin-bottom: 8px;
-  }
-
-  .result-dino-tags {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .result-dino-tag {
-    background: rgba(124,252,0,0.15);
-    border: 1px solid rgba(124,252,0,0.3);
-    border-radius: 12px;
-    padding: 3px 10px;
-    font-size: 13px;
-    color: #7CFC00;
-  }
-
-  .retry-btn {
-    padding: 16px 56px;
-    border-radius: 50px;
-    border: none;
-    font-size: 20px;
-    font-weight: 900;
-    cursor: pointer;
-    background: linear-gradient(135deg, #FFD700, #FF8C00);
-    color: #1a0533;
-    letter-spacing: 2px;
-    transition: all 0.2s;
-  }
-
-  .retry-btn:hover { transform: scale(1.05); box-shadow: 0 0 30px rgba(255,215,0,0.5); }
-
-  /* BG STARS */
-  .stars {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 0;
-    overflow: hidden;
-  }
-
-  .star {
-    position: absolute;
-    width: 2px;
-    height: 2px;
-    background: #fff;
-    border-radius: 50%;
-    animation: twinkle 3s ease-in-out infinite;
-  }
-
-  @keyframes twinkle {
-    0%, 100% { opacity: 0.2; }
-    50% { opacity: 1; }
-  }
-
-  #title-screen, #game-screen, #result-screen {
-    position: relative;
-    z-index: 1;
-  }
-
-  /* COUNTDOWN */
-  .countdown-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    font-size: 120px;
-    font-weight: 900;
-    color: #FFD700;
-    text-shadow: 0 0 60px rgba(255,215,0,0.8);
-    animation: countAnim 0.8s ease-in-out;
-  }
-
-  @keyframes countAnim {
-    0% { transform: scale(2); opacity: 0; }
-    50% { transform: scale(1); opacity: 1; }
-    100% { transform: scale(0.8); opacity: 0.8; }
-  }
-
-  /* NEXT DINO ALERT */
-  .next-dino-alert {
-    position: absolute;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: rgba(255,215,0,0.2);
-    border: 1px solid #FFD700;
-    border-radius: 20px;
-    padding: 6px 20px;
-    font-size: 14px;
-    color: #FFD700;
-    animation: fadeInDown 0.5s ease-out;
-    white-space: nowrap;
-    z-index: 10;
-  }
-
-  @keyframes fadeInDown {
-    0% { opacity: 0; transform: translateX(-50%) translateY(-20px); }
-    100% { opacity: 1; transform: translateX(-50%) translateY(0); }
-  }
-
-  /* PROGRESS BAR */
-  .progress-bar-wrap {
-    width: 100%;
-    height: 4px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 2px;
-    margin-bottom: 10px;
-  }
-
-  .progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #7CFC00, #FFD700);
-    border-radius: 2px;
-    transition: width 1s linear;
-  }
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Hiragino Kaku Gothic Pro', 'Meiryo', sans-serif;
+  background: linear-gradient(160deg, #0d0d2b 0%, #0a1a0a 100%);
+  min-height: 100vh;
+  color: #fff;
+  overflow: hidden;
+}
+
+/* ===== SCREENS ===== */
+.screen { display: none; }
+#screen-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 20px;
+  position: relative;
+}
+#screen-game {
+  height: 100vh;
+  flex-direction: column;
+  padding: 12px 16px 8px;
+  position: relative;
+}
+#screen-result {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 16px;
+  padding: 20px;
+}
+
+/* ===== STARFIELD ===== */
+.starfield {
+  position: fixed; inset: 0;
+  pointer-events: none; z-index: 0; overflow: hidden;
+}
+.star {
+  position: absolute; border-radius: 50%;
+  background: #fff; animation: twinkle 3s ease-in-out infinite;
+}
+@keyframes twinkle { 0%,100%{opacity:.15} 50%{opacity:.9} }
+
+/* ===== TITLE ===== */
+.game-title {
+  text-align: center; position: relative; z-index: 1;
+  text-shadow: 0 0 40px rgba(255,200,0,.6);
+}
+.game-title .line1 { font-size: 52px; font-weight: 900; color: #FFD700; }
+.game-title .line2 { font-size: 30px; font-weight: 700; color: #7FFF00; margin-top: 4px; }
+
+.title-sub {
+  color: #aaa; font-size: 15px; text-align: center; position: relative; z-index: 1;
+}
+
+.diff-section { position: relative; z-index: 1; text-align: center; }
+.diff-label { font-size: 13px; color: #aaa; margin-bottom: 8px; }
+.diff-btns { display: flex; gap: 10px; }
+.diff-btn {
+  padding: 8px 22px; border-radius: 20px; border: 2px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.07); color: #ddd; font-size: 15px; font-weight: bold;
+  cursor: pointer; transition: all .15s;
+}
+.diff-btn:hover, .diff-btn.sel {
+  background: rgba(255,255,255,.2); border-color: #FFD700; color: #fff; transform: scale(1.05);
+}
+.diff-btn.sel.easy { border-color: #7FFF00; background: rgba(127,255,0,.12); }
+.diff-btn.sel.normal { border-color: #FFD700; background: rgba(255,215,0,.12); }
+.diff-btn.sel.hard { border-color: #FF6347; background: rgba(255,99,71,.12); }
+
+.start-btn {
+  padding: 16px 60px; border-radius: 40px; border: none; font-size: 22px;
+  font-weight: 900; cursor: pointer; letter-spacing: 3px; position: relative; z-index: 1;
+  background: linear-gradient(135deg, #FFD700, #FF8C00);
+  color: #1a0533; box-shadow: 0 0 30px rgba(255,215,0,.4); transition: all .2s;
+}
+.start-btn:hover { transform: scale(1.07); box-shadow: 0 0 50px rgba(255,215,0,.7); }
+
+.title-dinos {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  display: flex; justify-content: space-around; align-items: flex-end;
+  pointer-events: none; overflow: hidden;
+}
+.title-dino { font-size: 90px; opacity: .25; animation: tbounce 1.8s ease-in-out infinite; }
+.title-dino:nth-child(2) { animation-delay: .4s; }
+.title-dino:nth-child(3) { animation-delay: .8s; }
+.title-dino:nth-child(4) { animation-delay: 1.2s; }
+@keyframes tbounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-18px)} }
+
+/* ===== HUD ===== */
+.hud {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 8px; flex-shrink: 0; position: relative; z-index: 1;
+}
+.hud-item { text-align: center; min-width: 70px; }
+.hud-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; }
+.hud-value { font-size: 26px; font-weight: 900; color: #FFD700; }
+
+.timer-wrap { text-align: center; }
+.timer { font-size: 40px; font-weight: 900; color: #fff; line-height: 1; }
+.timer.danger { color: #FF4444; animation: tdanger .4s ease-in-out infinite; }
+@keyframes tdanger { 0%,100%{transform:scale(1)} 50%{transform:scale(1.12)} }
+
+.prog-wrap { width: 140px; height: 5px; background: rgba(255,255,255,.1); border-radius: 3px; margin: 3px auto 0; }
+.prog-bar { height: 100%; background: linear-gradient(90deg,#7FFF00,#FFD700); border-radius: 3px; transition: width 1s linear; }
+
+.combo-val { font-size: 22px; font-weight: 900; color: #FF8C00; transition: all .15s; }
+.combo-val.big { color: #FFD700; transform: scale(1.3); }
+
+/* ===== DINO ARENA ===== */
+.dino-arena {
+  flex: 1; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; position: relative; min-height: 0;
+}
+
+.dino-badge {
+  background: rgba(0,0,0,.5); border: 1px solid rgba(255,255,255,.15);
+  border-radius: 16px; padding: 4px 18px; font-size: 13px; color: #ccc; margin-bottom: 6px;
+}
+.dino-badge .jp { color: #7FFF00; font-weight: bold; font-size: 15px; }
+.dino-badge .en { color: #666; margin-left: 8px; font-size: 11px; }
+.dino-badge .special { color: #FFD700; margin-right: 4px; }
+
+.hp-wrap { width: 200px; height: 12px; background: rgba(0,0,0,.4); border-radius: 6px; border: 1px solid rgba(255,255,255,.15); overflow: hidden; margin-bottom: 4px; }
+.hp-bar { height: 100%; background: linear-gradient(90deg,#FF4444,#FF8C00); border-radius: 6px; transition: width .3s ease; }
+.hp-text { font-size: 11px; color: #777; margin-bottom: 10px; }
+
+.dino-stage {
+  position: relative;
+  width: 280px; height: 210px;
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.dino-svg-wrap {
+  width: 240px; height: 200px;
+  animation: idle 1.4s ease-in-out infinite;
+  transition: filter .1s;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,.7));
+}
+.dino-svg-wrap.hit { animation: hit .35s ease-out !important; }
+.dino-svg-wrap.dead { animation: dead .55s ease-out forwards !important; }
+
+@keyframes idle { 0%,100%{transform:translateY(0) rotate(0deg)} 50%{transform:translateY(-7px) rotate(.8deg)} }
+@keyframes hit {
+  0%{transform:translateX(0) scale(1); filter:brightness(4) drop-shadow(0 0 20px #FF4444);}
+  30%{transform:translateX(22px) rotate(12deg);}
+  60%{transform:translateX(-8px) rotate(-5deg); filter:brightness(1.5);}
+  100%{transform:translateX(0) rotate(0); filter:drop-shadow(0 8px 24px rgba(0,0,0,.7));}
+}
+@keyframes dead {
+  0%{transform:translateY(0) rotate(0) scale(1); opacity:1;}
+  40%{transform:translateY(-25px) rotate(25deg) scale(1.1);}
+  100%{transform:translateY(150px) rotate(60deg) scale(.5); opacity:0;}
+}
+
+.effect-layer { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.slash { position: absolute; font-size: 52px; pointer-events: none; animation: slash .45s ease-out forwards; }
+@keyframes slash { 0%{transform:scale(.4) rotate(-15deg);opacity:1} 100%{transform:scale(2) rotate(20deg);opacity:0} }
+.popup { position: absolute; font-size: 22px; font-weight: 900; color: #FFD700; pointer-events: none; animation: popfloat .9s ease-out forwards; white-space: nowrap; text-shadow: 0 0 8px rgba(255,215,0,.7); }
+@keyframes popfloat { 0%{opacity:1;transform:translateY(0) translateX(-50%)} 100%{opacity:0;transform:translateY(-55px) translateX(-50%)} }
+
+/* ===== TYPING ===== */
+.typing-section { flex-shrink: 0; position: relative; z-index: 1; }
+
+.q-box {
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.12);
+  border-radius: 14px; padding: 12px 18px; margin-bottom: 8px;
+}
+.q-label { font-size: 10px; color: #666; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; }
+.q-text { font-size: 28px; font-weight: 700; line-height: 1.3; letter-spacing: 1px; min-height: 42px; }
+.q-romaji { font-size: 14px; color: #555; margin-top: 4px; letter-spacing: 2px; font-family: monospace; }
+
+.ch-ok { color: #7FFF00; }
+.ch-ng { color: #FF4444; background: rgba(255,68,68,.18); border-radius: 2px; }
+.ch-cur { color: #FFD700; border-bottom: 2px solid #FFD700; }
+.ch-todo { color: #fff; }
+
+.romaji-ok { color: #7FFF00; }
+.romaji-ng { color: #FF4444; }
+.romaji-cur { color: #FFD700; }
+.romaji-todo { color: #444; }
+
+.input-hidden {
+  position: absolute; opacity: 0; pointer-events: none;
+  left: -9999px; top: -9999px; width: 1px; height: 1px;
+}
+
+.input-bar {
+  background: rgba(255,255,255,.08); border: 2px solid rgba(255,255,255,.2);
+  border-radius: 10px; padding: 10px 16px; font-size: 20px; letter-spacing: 3px;
+  color: #fff; min-height: 48px; font-family: monospace; transition: border-color .15s;
+  display: flex; align-items: center;
+}
+.input-bar.ok { border-color: #7FFF00; }
+.input-bar.ng { border-color: #FF4444; background: rgba(255,68,68,.08); }
+.cursor-blink { display: inline-block; width: 2px; height: 22px; background: #FFD700; margin-left: 1px; animation: cblink .8s steps(1) infinite; vertical-align: middle; }
+@keyframes cblink { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+
+/* ===== RESULT ===== */
+.res-title { font-size: 40px; font-weight: 900; color: #FFD700; text-shadow: 0 0 30px rgba(255,215,0,.5); }
+.res-rank { font-size: 64px; font-weight: 900; background: linear-gradient(135deg,#FFD700,#FF8C00); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+.res-comment { font-size: 18px; color: #ccc; text-align: center; }
+.res-cards { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+.res-card { background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.15); border-radius: 14px; padding: 16px 24px; text-align: center; min-width: 110px; }
+.res-card-label { font-size: 10px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 6px; }
+.res-card-val { font-size: 36px; font-weight: 900; color: #FFD700; }
+.res-card-unit { font-size: 12px; color: #666; }
+.res-dino-box { background: rgba(0,0,0,.3); border-radius: 10px; padding: 10px 16px; max-width: 480px; width: 100%; max-height: 100px; overflow-y: auto; }
+.res-dino-label { font-size: 11px; color: #666; margin-bottom: 6px; }
+.res-dino-tags { display: flex; flex-wrap: wrap; gap: 5px; }
+.res-dino-tag { background: rgba(127,255,0,.1); border: 1px solid rgba(127,255,0,.3); border-radius: 10px; padding: 2px 9px; font-size: 12px; color: #7FFF00; }
+.retry-btn {
+  padding: 14px 52px; border-radius: 40px; border: none; font-size: 18px; font-weight: 900;
+  cursor: pointer; letter-spacing: 2px; background: linear-gradient(135deg,#FFD700,#FF8C00);
+  color: #1a0533; transition: all .2s;
+}
+.retry-btn:hover { transform: scale(1.06); box-shadow: 0 0 28px rgba(255,215,0,.5); }
+
+/* ===== COUNTDOWN ===== */
+.countdown {
+  position: fixed; inset: 0; background: rgba(0,0,0,.75); z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 130px; font-weight: 900; color: #FFD700;
+  text-shadow: 0 0 60px rgba(255,215,0,.8);
+  animation: cdshow .8s ease-out;
+}
+@keyframes cdshow { 0%{transform:scale(2.5);opacity:0} 50%{transform:scale(1);opacity:1} 100%{transform:scale(.85);opacity:.85} }
 </style>
 </head>
 <body>
 
-<!-- 背景の星 -->
-<div class="stars" id="stars"></div>
+<div class="starfield" id="starfield"></div>
 
-<!-- タイトル画面 -->
-<div id="title-screen">
-  <div style="text-align:center; position:relative; z-index:1;">
-    <div style="font-size:80px; margin-bottom:8px;">🦕</div>
-  </div>
+<!-- TITLE SCREEN -->
+<div id="screen-title" class="screen">
+  <div style="font-size:72px;position:relative;z-index:1">🦖</div>
   <div class="game-title">
     <div class="line1">福井弁恐竜</div>
     <div class="line2">タイピングバトル</div>
   </div>
-  <div class="title-sub">福井弁をタイピングして恐竜を倒せ！</div>
+  <p class="title-sub">ローマ字でタイピングして恐竜を倒せ！<br>（例：ほや → <span style="color:#FFD700;font-family:monospace">hoya</span>）</p>
 
-  <div class="difficulty-section">
-    <div class="difficulty-label">難易度を選んでね</div>
-    <div class="difficulty-buttons">
-      <button class="diff-btn easy" onclick="selectDiff('easy')">やさしい</button>
-      <button class="diff-btn normal selected" onclick="selectDiff('normal')">ふつう</button>
-      <button class="diff-btn hard" onclick="selectDiff('hard')">むずい</button>
+  <div class="diff-section">
+    <div class="diff-label">難易度</div>
+    <div class="diff-btns">
+      <button class="diff-btn easy" onclick="setDiff('easy')">やさしい</button>
+      <button class="diff-btn normal sel" onclick="setDiff('normal')">ふつう</button>
+      <button class="diff-btn hard" onclick="setDiff('hard')">むずい</button>
     </div>
   </div>
 
   <button class="start-btn" onclick="startCountdown()">スタート！</button>
 
   <div class="title-dinos">
-    <div class="title-dino-emoji">🦕</div>
-    <div class="title-dino-emoji">🦖</div>
-    <div class="title-dino-emoji">🦕</div>
-    <div class="title-dino-emoji">🦖</div>
+    <div class="title-dino">🦕</div>
+    <div class="title-dino">🦖</div>
+    <div class="title-dino">🦕</div>
+    <div class="title-dino">🦖</div>
   </div>
 </div>
 
-<!-- ゲーム画面 -->
-<div id="game-screen">
+<!-- GAME SCREEN -->
+<div id="screen-game" class="screen">
   <div class="hud">
     <div class="hud-item">
-      <div class="hud-label">倒した数</div>
-      <div class="hud-value" id="score-display">0</div>
+      <div class="hud-label">撃破数</div>
+      <div class="hud-value" id="score-val">0</div>
     </div>
-    <div style="text-align:center;">
-      <div class="timer-display" id="timer-display">30</div>
-      <div class="progress-bar-wrap" style="width:160px;">
-        <div class="progress-bar" id="progress-bar" style="width:100%;"></div>
-      </div>
+    <div class="timer-wrap">
+      <div class="timer" id="timer">30</div>
+      <div class="prog-wrap"><div class="prog-bar" id="prog-bar" style="width:100%"></div></div>
     </div>
     <div class="hud-item">
       <div class="hud-label">コンボ</div>
-      <div class="combo-display" id="combo-display">0x</div>
+      <div class="combo-val" id="combo-val">0x</div>
     </div>
   </div>
 
   <div class="dino-arena" id="dino-arena">
-    <div class="dino-name-badge" id="dino-name-badge">
-      <span id="dino-jp-name">フクイラプトル</span>
-      <span style="color:#888; margin-left:8px; font-size:11px;" id="dino-en-name"></span>
+    <div class="dino-badge" id="dino-badge">
+      <span class="special" id="dino-special"></span>
+      <span class="jp" id="dino-jp"></span>
+      <span class="en" id="dino-en"></span>
     </div>
-    <div class="dino-hp-bar-wrap">
-      <div class="dino-hp-bar" id="dino-hp-bar"></div>
-    </div>
-    <div class="dino-hp-text" id="dino-hp-text"></div>
-    <div class="dino-container">
+    <div class="hp-wrap"><div class="hp-bar" id="hp-bar" style="width:100%"></div></div>
+    <div class="hp-text" id="hp-text">HP 3 / 3</div>
+    <div class="dino-stage">
       <div class="effect-layer" id="effect-layer"></div>
-      <svg class="dino-svg" id="dino-svg" viewBox="0 0 200 180" xmlns="http://www.w3.org/2000/svg"></svg>
+      <div class="dino-svg-wrap" id="dino-wrap"></div>
     </div>
   </div>
 
   <div class="typing-section">
-    <div class="question-box">
-      <div class="question-label">タイピング</div>
-      <div class="question-text" id="question-display"></div>
+    <div class="q-box">
+      <div class="q-label">タイピング（ローマ字入力）</div>
+      <div class="q-text" id="q-text"></div>
+      <div class="q-romaji" id="q-romaji"></div>
     </div>
-    <input
-      class="input-box"
-      id="typing-input"
-      type="text"
-      autocomplete="off"
-      autocorrect="off"
-      autocapitalize="off"
-      spellcheck="false"
-      placeholder="ここにタイピング..."
-    />
+    <div class="input-bar" id="input-bar">
+      <span id="typed-display"></span>
+      <span class="cursor-blink"></span>
+    </div>
   </div>
+
+  <input class="input-hidden" id="hidden-input" type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
 </div>
 
-<!-- リザルト画面 -->
-<div id="result-screen">
-  <div class="result-title">GAME OVER</div>
-  <div class="result-rank" id="result-rank">S</div>
-  <div class="result-comment" id="result-comment"></div>
-  <div class="result-cards">
-    <div class="result-card">
-      <div class="result-card-label">倒した恐竜</div>
-      <div class="result-card-value" id="res-score">0</div>
-      <div class="result-card-unit">体</div>
+<!-- RESULT SCREEN -->
+<div id="screen-result" class="screen">
+  <div class="res-title">GAME OVER</div>
+  <div class="res-rank" id="res-rank">A</div>
+  <div class="res-comment" id="res-comment"></div>
+  <div class="res-cards">
+    <div class="res-card">
+      <div class="res-card-label">撃破数</div>
+      <div class="res-card-val" id="res-score">0</div>
+      <div class="res-card-unit">体</div>
     </div>
-    <div class="result-card">
-      <div class="result-card-label">最大コンボ</div>
-      <div class="result-card-value" id="res-combo">0</div>
-      <div class="result-card-unit">コンボ</div>
+    <div class="res-card">
+      <div class="res-card-label">最大コンボ</div>
+      <div class="res-card-val" id="res-combo">0</div>
+      <div class="res-card-unit">コンボ</div>
     </div>
-    <div class="result-card">
-      <div class="result-card-label">正確率</div>
-      <div class="result-card-value" id="res-acc">0</div>
-      <div class="result-card-unit">%</div>
+    <div class="res-card">
+      <div class="res-card-label">正確率</div>
+      <div class="res-card-val" id="res-acc">0</div>
+      <div class="res-card-unit">%</div>
     </div>
-    <div class="result-card">
-      <div class="result-card-label">タイピング数</div>
-      <div class="result-card-value" id="res-chars">0</div>
-      <div class="result-card-unit">文字</div>
+    <div class="res-card">
+      <div class="res-card-label">打鍵数</div>
+      <div class="res-card-val" id="res-chars">0</div>
+      <div class="res-card-unit">打</div>
     </div>
   </div>
-  <div class="result-dino-list">
-    <div class="result-dino-list-label">倒した恐竜たち</div>
-    <div class="result-dino-tags" id="res-dino-list"></div>
+  <div class="res-dino-box">
+    <div class="res-dino-label">倒した恐竜たち</div>
+    <div class="res-dino-tags" id="res-dino-tags"></div>
   </div>
   <button class="retry-btn" onclick="goTitle()">もう一度！</button>
 </div>
 
 <script>
-// ===== DATA =====
-
-const DINOSAURS = [
-  // 福井発掘（特別）
-  { name: 'フクイラプトル', en: 'Fukuiraptor', hp: 3, color: '#e74c3c', special: true },
-  { name: 'フクイサウルス', en: 'Fukuisaurus', hp: 4, color: '#27ae60', special: true },
-  { name: 'フクイティタン', en: 'Fukuititan', hp: 5, color: '#2980b9', special: true },
-  { name: 'コシサウルス', en: 'Koshisaurus', hp: 3, color: '#8e44ad', special: true },
-  { name: 'フクイベナートル', en: 'Fukuivenator', hp: 4, color: '#d35400', special: true },
-  { name: 'フクイプテリクス', en: 'Fukuipteryx', hp: 2, color: '#16a085', special: true },
-  { name: 'ティラノミムス', en: 'Tyrannomimus', hp: 3, color: '#c0392b', special: true },
-  // 福井恐竜博物館所蔵
-  { name: 'ティラノサウルス', en: 'T.rex', hp: 6, color: '#7f0000' },
-  { name: 'トリケラトプス', en: 'Triceratops', hp: 5, color: '#1a5276' },
-  { name: 'ブラキオサウルス', en: 'Brachiosaurus', hp: 5, color: '#1e8449' },
-  { name: 'アロサウルス', en: 'Allosaurus', hp: 4, color: '#6e2f1a' },
-  { name: 'スピノサウルス', en: 'Spinosaurus', hp: 5, color: '#1a3a5c' },
-  { name: 'デイノニクス', en: 'Deinonychus', hp: 3, color: '#5d4037' },
-  { name: 'イグアノドン', en: 'Iguanodon', hp: 3, color: '#2d6a2d' },
-  { name: 'ディプロドクス', en: 'Diplodocus', hp: 4, color: '#4a235a' },
-  { name: 'パラサウロロフス', en: 'Parasaurolophus', hp: 3, color: '#1a6a5c' },
-  { name: 'パキケファロサウルス', en: 'Pachycephalosaurus', hp: 3, color: '#7d6608' },
-  { name: 'タルボサウルス', en: 'Tarbosaurus', hp: 5, color: '#7b241c' },
-  { name: 'プロトケラトプス', en: 'Protoceratops', hp: 2, color: '#2c3e50' },
-  { name: 'オウラノサウルス', en: 'Ouranosaurus', hp: 3, color: '#1a5e3a' },
-  { name: 'エオラプトル', en: 'Eoraptor', hp: 2, color: '#5b2c6f' },
-  { name: 'コエロフィシス', en: 'Coelophysis', hp: 2, color: '#2e4057' },
-  { name: 'マメンチサウルス', en: 'Mamenchisaurus', hp: 4, color: '#0e6655' },
-  { name: 'カマラサウルス', en: 'Camarasaurus', hp: 4, color: '#2e7d32' },
-  { name: 'シノサウルス', en: 'Sinosaurus', hp: 3, color: '#4527a0' },
-  { name: 'シンラプトル', en: 'Sinraptor', hp: 4, color: '#880e4f' },
-  { name: 'スコミムス', en: 'Suchomimus', hp: 4, color: '#004d40' },
-  { name: 'モノロフォサウルス', en: 'Monolophosaurus', hp: 3, color: '#bf360c' },
-  { name: 'ファルカリウス', en: 'Falcarius', hp: 3, color: '#33691e' },
-  { name: 'マイアサウラ', en: 'Maiasaura', hp: 3, color: '#1b5e20' },
-  { name: 'プラテオサウルス', en: 'Plateosaurus', hp: 3, color: '#4e342e' },
-  { name: 'ニッポノサウルス', en: 'Nipponosaurus', hp: 3, color: '#1565c0' },
-  { name: 'ヘスペロサウルス', en: 'Hesperosaurus', hp: 3, color: '#6a1520' },
-  { name: 'ベルサウルス', en: 'Bellusaurus', hp: 2, color: '#00695c' },
-  { name: 'モノニクス', en: 'Mononykus', hp: 2, color: '#37474f' },
-  { name: 'シチパチ', en: 'Citipati', hp: 3, color: '#4a148c' },
-  { name: 'オルニトミムス', en: 'Ornithomimus', hp: 2, color: '#1a237e' },
-  { name: 'ケラトサウルス', en: 'Ceratosaurus', hp: 4, color: '#b71c1c' },
+// ========== DINOSAUR DATA ==========
+// emoji: 🦖=theropod, 🦕=sauropod/others
+// hp: base HP (multiplied by difficulty)
+// color: glow color
+const DINOS = [
+  // ★ 福井発掘（特別）
+  { name:'フクイラプトル', en:'Fukuiraptor', emoji:'🦖', hp:3, color:'#FF6B35', special:true },
+  { name:'フクイサウルス', en:'Fukuisaurus',  emoji:'🦕', hp:4, color:'#4CAF50', special:true },
+  { name:'フクイティタン', en:'Fukuititan',   emoji:'🦕', hp:5, color:'#2196F3', special:true },
+  { name:'コシサウルス',   en:'Koshisaurus',  emoji:'🦕', hp:3, color:'#9C27B0', special:true },
+  { name:'フクイベナートル',en:'Fukuivenator', emoji:'🦖', hp:4, color:'#FF9800', special:true },
+  { name:'フクイプテリクス',en:'Fukuipteryx',  emoji:'🦅', hp:2, color:'#00BCD4', special:true },
+  { name:'ティラノミムス', en:'Tyrannomimus',  emoji:'🦖', hp:3, color:'#F44336', special:true },
+  // 博物館所蔵
+  { name:'ティラノサウルス',  en:'T.rex',             emoji:'🦖', hp:6, color:'#B71C1C' },
+  { name:'トリケラトプス',    en:'Triceratops',        emoji:'🦏', hp:5, color:'#1565C0' },
+  { name:'ブラキオサウルス',  en:'Brachiosaurus',      emoji:'🦕', hp:5, color:'#2E7D32' },
+  { name:'アロサウルス',      en:'Allosaurus',         emoji:'🦖', hp:4, color:'#BF360C' },
+  { name:'スピノサウルス',    en:'Spinosaurus',        emoji:'🦖', hp:5, color:'#006064' },
+  { name:'デイノニクス',      en:'Deinonychus',        emoji:'🦖', hp:3, color:'#4A148C' },
+  { name:'イグアノドン',      en:'Iguanodon',          emoji:'🦕', hp:3, color:'#1B5E20' },
+  { name:'ディプロドクス',    en:'Diplodocus',         emoji:'🦕', hp:4, color:'#880E4F' },
+  { name:'パラサウロロフス',  en:'Parasaurolophus',    emoji:'🦕', hp:3, color:'#004D40' },
+  { name:'パキケファロサウルス',en:'Pachycephalosaurus',emoji:'🦕', hp:3, color:'#E65100' },
+  { name:'タルボサウルス',    en:'Tarbosaurus',        emoji:'🦖', hp:5, color:'#7B1FA2' },
+  { name:'プロトケラトプス',  en:'Protoceratops',      emoji:'🦕', hp:2, color:'#0277BD' },
+  { name:'エオラプトル',      en:'Eoraptor',           emoji:'🦖', hp:2, color:'#558B2F' },
+  { name:'コエロフィシス',    en:'Coelophysis',        emoji:'🦖', hp:2, color:'#37474F' },
+  { name:'マメンチサウルス',  en:'Mamenchisaurus',     emoji:'🦕', hp:4, color:'#00796B' },
+  { name:'カマラサウルス',    en:'Camarasaurus',       emoji:'🦕', hp:4, color:'#33691E' },
+  { name:'シノサウルス',      en:'Sinosaurus',         emoji:'🦖', hp:3, color:'#6A1B9A' },
+  { name:'スコミムス',        en:'Suchomimus',         emoji:'🦖', hp:4, color:'#00695C' },
+  { name:'モノロフォサウルス',en:'Monolophosaurus',    emoji:'🦖', hp:3, color:'#D84315' },
+  { name:'シンラプトル',      en:'Sinraptor',          emoji:'🦖', hp:4, color:'#AD1457' },
+  { name:'ケラトサウルス',    en:'Ceratosaurus',       emoji:'🦖', hp:4, color:'#C62828' },
+  { name:'タルボサウルス',    en:'Tarbosaurus',        emoji:'🦖', hp:5, color:'#4527A0' },
+  { name:'マイアサウラ',      en:'Maiasaura',          emoji:'🦕', hp:3, color:'#2E7D32' },
+  { name:'プラテオサウルス',  en:'Plateosaurus',       emoji:'🦕', hp:3, color:'#4E342E' },
+  { name:'ニッポノサウルス',  en:'Nipponosaurus',      emoji:'🦕', hp:3, color:'#1565C0' },
+  { name:'ヘスペロサウルス',  en:'Hesperosaurus',      emoji:'🦕', hp:3, color:'#6D4C41' },
+  { name:'ファルカリウス',    en:'Falcarius',          emoji:'🦖', hp:3, color:'#558B2F' },
+  { name:'モノニクス',        en:'Mononykus',          emoji:'🦖', hp:2, color:'#37474F' },
+  { name:'シチパチ',          en:'Citipati',           emoji:'🦖', hp:3, color:'#512DA8' },
+  { name:'オルニトミムス',    en:'Ornithomimus',       emoji:'🦖', hp:2, color:'#0288D1' },
+  { name:'ベルサウルス',      en:'Bellusaurus',        emoji:'🦕', hp:2, color:'#00897B' },
 ];
 
-const QUESTIONS = {
+// ========== QUESTIONS ==========
+// text: 表示テキスト, r: 打鍵するローマ字（スペースなし・小文字）
+const QS = {
   easy: [
-    'ほや', 'なんしとる', 'えらい', 'いねる', 'かたい', 'なして',
-    'ふくい', 'おろし', 'きずし', 'へしこ', 'あぶらげ', 'ぼてぼて',
-    'やちや', 'じゃみじゃみ', 'こわい', 'まんで', 'きのどく',
-    'はよしねや', 'なんぞや', 'そや',
+    { text:'ほや',         r:'hoya' },
+    { text:'なんしとる',   r:'nanshitoru' },
+    { text:'えらい',       r:'erai' },
+    { text:'いねる',       r:'ineru' },
+    { text:'かたい',       r:'katai' },
+    { text:'なして',       r:'nashite' },
+    { text:'ふくい',       r:'fukui' },
+    { text:'へしこ',       r:'heshiko' },
+    { text:'ほやほや',     r:'hoyahoya' },
+    { text:'まんで',       r:'mande' },
+    { text:'きのどく',     r:'kinodoku' },
+    { text:'そうなんけ',   r:'sounanke' },
+    { text:'こわい',       r:'kowai' },
+    { text:'おろしそば',   r:'oroshisoba' },
+    { text:'えちぜん',     r:'echizen' },
+    { text:'しらんかった', r:'shirankatta' },
+    { text:'なんぞや',     r:'nanzoya' },
+    { text:'じゃみじゃみ', r:'jamijami' },
+    { text:'やちや',       r:'yachiya' },
+    { text:'あぶらげ',     r:'aburage' },
   ],
   normal: [
-    'ほやほや、そんげなこと知らんかったわ',
-    'なんしとるん？えらいとこまで来たんやないけ',
-    'あのへしこ、ほんまにうまかったわいね',
-    'きょうはえらい寒いなあ、いねようか',
-    'ふくいの恐竜博物館は世界有数の規模やぞ',
-    'えちぜん鉄道に乗って永平寺へ行こいや',
-    'おろしそばは大根おろしたっぷりでうまいぞ',
-    'かずら橋を渡るんが怖かったわいね',
-    '越前がには日本一うまいかにやと思うぞ',
-    'まんで君はいつもそんなにやさしいんけ',
-    'なして早よ来んかったんや、待っとったぞ',
-    '恐竜の化石が北谷層から出てきたんやって',
-    'フクイラプトルは福井県で発見された肉食恐竜や',
-    'あのじゃみじゃみするテレビ、なおしてや',
-    'こわいめにあったから、もうやめとくわいね',
+    { text:'ほやほや、そうなんけ',           r:'hoyahoyasounanke' },
+    { text:'なんしとるん、えらいとこまできた', r:'nanshitoruneraitokomakita' },
+    { text:'へしこはほんとにうまいぞ',         r:'heshikohahontoniumaizo' },
+    { text:'きょうはえらいさむいなあ',         r:'kyouhaeraisamuinaa' },
+    { text:'ふくいのきょうりゅうはすごい',     r:'fukuinokyouryuuhasugoi' },
+    { text:'えちぜんてつどうにのろいや',       r:'echizentetsudouninoroiya' },
+    { text:'おろしそばはうまいぞ',             r:'oroshisobahaumaizo' },
+    { text:'いちほまれはふくいのおこめ',       r:'ichihomarehafukuinookome' },
+    { text:'まんでくんはやさしいんけ',         r:'mandekunhayasashiinke' },
+    { text:'なしてはよこんかったんや',         r:'nashitehayokonnkattanya' },
+    { text:'越前がにはうまいぞ',               r:'echizenganihaumaizo' },
+    { text:'恐竜の化石が北谷からでてきた',     r:'kyouryuunokasekigakitatanidekita' },
+    { text:'フクイラプトルはにくしょくきょうりゅう', r:'fukuiraputoruhanikusyokukyouryuu' },
+    { text:'えいえん寺にいっぺんいこいや',     r:'eiheijiniippenikooiya' },
+    { text:'こしひかりよりいちほまれがうまい', r:'koshihikariyoriichihomaregaumai' },
   ],
   hard: [
-    'ほやほや、フクイラプトルは白亜紀前期の肉食恐竜でかつての最強やったんやわいね',
-    'なんしとるん？越前がには11月から解禁やで、今年もえらいうまかったぞ',
-    'フクイサウルスは植物食で鳥脚類に属する福井県産の恐竜で大きさは約4から5メートルや',
-    'えちぜん鉄道と福井鉄道は福井の大切な交通手段で地元民にはなくてはならん存在やぞ',
-    '福井県立恐竜博物館は勝山市にあって年間100万人以上が訪れる大人気スポットやわ',
-    'へしことは塩と糠で漬けた保存食で越前若狭の伝統的な発酵食品やぞ、くさいけどうまい',
-    'コシサウルスは2015年に新種として記載された鳥脚類の恐竜で勝山市片倉層産やって',
-    'フクイティタンは日本で初めて発見された竜脚類で首が長うて草食性やったんやわいね',
-    'まんで君、越前和紙は千五百年の歴史があって国の重要無形文化財に指定されとるんぞ',
-    'ティラノミムスは2023年に記載されたばかりの新種恐竜で福井県北谷から出てきたんや',
+    { text:'フクイラプトルははくあきぜんきのにくしょくきょうりゅうや', r:'fukuiraptoruhahakuakizenkininikusyokukyouryuuya' },
+    { text:'えちぜんがにはじゅういちがつにかいきんになるんやぞ',       r:'echizenganihajuuichigatsunikaikinoninarunyazo' },
+    { text:'フクイサウルスはとりきゃくるいのしょくぶつしょくきょうりゅうや', r:'fukuisaurushatorikyakuruinoshokubutsushokukyouryuuya' },
+    { text:'えちぜんわしはせんごひゃくねんのれきしがあるんやぞ',       r:'echizenwashipasengohyakunennoreishigaarunyazo' },
+    { text:'ふくいけんりつきょうりゅうはくぶつかんはかつやまにあるぞ', r:'fukuikenritskyouryuuhakubutsukannhakatsuyamaにaruzo' },
+    { text:'へしこはえちぜんわかさのでんとうてきなはっこうしょくひんや', r:'heshikohaechizenwakasanodentoutekina hakkoushokuhinya' },
+    { text:'コシサウルスはにせんじゅうごねんにあたらしいしゅとしてきさいされた', r:'koshisaurushanisenjyugonenniatarashiishutoshitekisaisareta' },
+    { text:'フクイティタンはにほんではじめてはっけんされたりゅうきゃくるいや', r:'fukuititannhanihonndehajimetehakkennsaretatyukyakuruiya' },
+    { text:'ティラノミムスはにせんにじゅうさんねんにきさいされたしんしゅきょうりゅうや', r:'tirannomimusnisennijyusannennnikisaisaratashinshyukyouryuuya' },
+    { text:'きたにそうからはたくさんのきょうりゅうのかせきがはっけんされとるぞ', r:'kitanisoukarahatasansannnokyouryuunokasekigahakkensarettoruzo' },
   ],
 };
 
-// ===== STATE =====
-let difficulty = 'normal';
-let score = 0;
-let combo = 0;
-let maxCombo = 0;
-let timeLeft = 30;
-let timerInterval = null;
-let currentQuestion = '';
-let currentInput = '';
-let totalTyped = 0;
-let correctTyped = 0;
-let defeatedDinos = [];
-let currentDino = null;
-let currentDinoHp = 0;
-let currentDinoMaxHp = 0;
-let gameActive = false;
-let usedQuestions = [];
-let lastTypeTime = 0;
+// ========== SVG DINO DRAWING ==========
+// 4 types: 0=theropod, 1=sauropod, 2=ceratopsian, 3=raptor
+// viewBox: 0 0 240 200, transparent background
+function buildDinoSVG(dino) {
+  const idx = DINOS.indexOf(dino) % 4;
+  const c = dino.color;
+  const light = lighten(c);
+  const belly = lighten(c, 60);
 
-// ===== INIT =====
-function initStars() {
-  const stars = document.getElementById('stars');
-  for (let i = 0; i < 80; i++) {
-    const star = document.createElement('div');
-    star.className = 'star';
-    star.style.left = Math.random() * 100 + '%';
-    star.style.top = Math.random() * 100 + '%';
-    star.style.animationDelay = Math.random() * 3 + 's';
-    star.style.animationDuration = (2 + Math.random() * 3) + 's';
-    stars.appendChild(star);
-  }
-}
-initStars();
+  const svgs = [
+    // Type 0: THEROPOD (T-Rex style) - large bipedal carnivore
+    `<svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" width="240" height="200">
+      <!-- tail -->
+      <path d="M72,128 Q44,138 18,158 Q12,162 14,156 Q38,134 70,122" fill="${c}"/>
+      <!-- body -->
+      <ellipse cx="122" cy="128" rx="52" ry="37" fill="${c}"/>
+      <!-- belly highlight -->
+      <ellipse cx="128" cy="136" rx="34" ry="22" fill="${belly}" opacity="0.35"/>
+      <!-- neck -->
+      <path d="M148,102 Q163,84 174,72 Q168,98 147,115" fill="${c}"/>
+      <!-- head -->
+      <ellipse cx="183" cy="70" rx="30" ry="20" fill="${c}"/>
+      <!-- lower jaw -->
+      <path d="M157,78 Q175,92 206,78 Q200,85 176,88 Q158,86 157,78" fill="${belly}"/>
+      <!-- teeth top -->
+      <path d="M164,77 L166,86 L168,77" fill="white" opacity="0.9"/>
+      <path d="M173,75 L175,84 L177,75" fill="white" opacity="0.9"/>
+      <path d="M183,73 L184,82 L186,73" fill="white" opacity="0.9"/>
+      <!-- eye -->
+      <circle cx="190" cy="64" r="7" fill="#111"/>
+      <circle cx="192" cy="62" r="2.5" fill="white"/>
+      <!-- nostril -->
+      <circle cx="204" cy="68" r="2.5" fill="${light}" opacity="0.6"/>
+      <!-- tiny arms -->
+      <path d="M148,120 L136,136 L141,134 M136,136 L132,143" stroke="${light}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- leg 1 -->
+      <path d="M103,162 L95,190 L105,188 L110,191" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <!-- leg 2 -->
+      <path d="M132,165 L128,192 L138,190 L142,192" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <!-- scales/pattern -->
+      <circle cx="122" cy="118" r="4" fill="${light}" opacity="0.25"/>
+      <circle cx="138" cy="125" r="3" fill="${light}" opacity="0.2"/>
+      <circle cx="108" cy="130" r="3" fill="${light}" opacity="0.2"/>
+    </svg>`,
 
-function selectDiff(d) {
-  difficulty = d;
-  document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('selected'));
-  document.querySelector(`.diff-btn.${d}`).classList.add('selected');
-}
+    // Type 1: SAUROPOD (long neck)
+    `<svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" width="240" height="200">
+      <!-- tail -->
+      <path d="M60,145 Q30,155 10,168 Q8,172 12,170 Q35,152 62,140" fill="${c}"/>
+      <!-- body -->
+      <ellipse cx="120" cy="145" rx="55" ry="35" fill="${c}"/>
+      <!-- belly -->
+      <ellipse cx="120" cy="154" rx="38" ry="22" fill="${belly}" opacity="0.35"/>
+      <!-- neck base to head -->
+      <path d="M145,118 Q160,95 165,68 Q168,45 174,40" stroke="${c}" stroke-width="26" fill="none" stroke-linecap="round"/>
+      <!-- neck highlight -->
+      <path d="M148,116 Q162,93 167,66 Q170,45 175,40" stroke="${light}" stroke-width="10" fill="none" stroke-linecap="round" opacity="0.3"/>
+      <!-- head -->
+      <ellipse cx="176" cy="38" rx="20" ry="13" fill="${c}"/>
+      <ellipse cx="178" cy="40" rx="13" ry="8" fill="${belly}" opacity="0.4"/>
+      <!-- eye -->
+      <circle cx="182" cy="33" r="5" fill="#111"/>
+      <circle cx="184" cy="31" r="1.8" fill="white"/>
+      <!-- nostril -->
+      <circle cx="190" cy="36" r="2" fill="${light}" opacity="0.5"/>
+      <!-- legs (4) -->
+      <path d="M90,178 L84,198 L93,197 L96,199" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <path d="M108,180 L103,199 L113,198 L116,200" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <path d="M132,180 L128,199 L138,198 L141,200" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <path d="M150,178 L147,198 L157,197 L159,199" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <!-- spots -->
+      <circle cx="110" cy="138" r="5" fill="${light}" opacity="0.2"/>
+      <circle cx="128" cy="132" r="4" fill="${light}" opacity="0.18"/>
+      <circle cx="95" cy="148" r="4" fill="${light}" opacity="0.18"/>
+    </svg>`,
 
-// ===== DINOSAUR SVG DRAWING =====
-function getDinoColor(dino) { return dino.color || '#e74c3c'; }
+    // Type 2: CERATOPSIAN (horned, frill)
+    `<svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" width="240" height="200">
+      <!-- tail -->
+      <path d="M58,145 Q34,152 18,162 Q14,165 17,161 Q36,147 60,139" fill="${c}"/>
+      <!-- body -->
+      <ellipse cx="122" cy="148" rx="58" ry="33" fill="${c}"/>
+      <!-- belly -->
+      <ellipse cx="122" cy="157" rx="42" ry="20" fill="${belly}" opacity="0.3"/>
+      <!-- frill -->
+      <path d="M162,105 Q178,70 188,58 Q198,50 202,60 Q198,72 190,82 Q180,92 168,100 Z" fill="${c}" stroke="${light}" stroke-width="1.5"/>
+      <!-- frill pattern -->
+      <path d="M170,100 Q183,78 192,64" stroke="${light}" stroke-width="2" fill="none" opacity="0.4"/>
+      <!-- head -->
+      <ellipse cx="166" cy="110" rx="28" ry="20" fill="${c}"/>
+      <!-- beak/snout -->
+      <path d="M188,108 Q202,112 202,118 Q196,122 188,118" fill="${belly}" opacity="0.5"/>
+      <!-- horn 1 (nose) -->
+      <path d="M194,107 L200,92 L196,107" fill="${light}"/>
+      <!-- horn 2 (brow left) -->
+      <path d="M173,96 L176,80 L179,96" fill="${light}"/>
+      <!-- horn 3 (brow right) -->
+      <path d="M182,95 L186,78 L188,95" fill="${light}"/>
+      <!-- eye -->
+      <circle cx="178" cy="106" r="6" fill="#111"/>
+      <circle cx="180" cy="104" r="2" fill="white"/>
+      <!-- 4 legs -->
+      <path d="M85,178 L78,198 L88,197 L91,199" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <path d="M108,180 L103,199 L113,198 L116,200" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <path d="M135,180 L131,199 L141,198 L143,200" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <path d="M155,177 L152,196 L162,195 L163,197" fill="${light}" stroke="${c}" stroke-width="1"/>
+    </svg>`,
 
-function drawDino(dino) {
-  const svg = document.getElementById('dino-svg');
-  const c = getDinoColor(dino);
-  const dark = shadeColor(c, -30);
-  const light = shadeColor(c, 30);
-  const isSpecial = dino.special;
-
-  // Different body shapes based on dino type
-  const shapes = [
-    // Shape 0: Bipedal (T-rex style)
-    `<ellipse cx="100" cy="110" rx="35" ry="25" fill="${c}" stroke="${dark}" stroke-width="2"/>
-     <ellipse cx="140" cy="95" rx="22" ry="16" fill="${c}" stroke="${dark}" stroke-width="2"/>
-     <ellipse cx="155" cy="90" rx="12" ry="9" fill="${light}" stroke="${dark}" stroke-width="1.5"/>
-     <circle cx="162" cy="87" r="3" fill="#111"/>
-     <circle cx="163" cy="86" r="1" fill="#fff"/>
-     <polygon points="163,93 168,100 160,97" fill="${dark}"/>
-     <polygon points="165,95 170,102 162,99" fill="${dark}"/>
-     <line x1="85" y1="130" x2="78" y2="155" stroke="${dark}" stroke-width="5" stroke-linecap="round"/>
-     <line x1="115" y1="130" x2="120" y2="155" stroke="${dark}" stroke-width="5" stroke-linecap="round"/>
-     <ellipse cx="77" cy="157" rx="8" ry="4" fill="${dark}"/>
-     <ellipse cx="121" cy="157" rx="8" ry="4" fill="${dark}"/>
-     <line x1="60" y1="108" x2="45" y2="115" stroke="${dark}" stroke-width="4" stroke-linecap="round"/>
-     <line x1="75" y1="108" x2="65" y2="118" stroke="${dark}" stroke-width="4" stroke-linecap="round"/>
-     <path d="M65,110 Q55,105 45,115" fill="none" stroke="${dark}" stroke-width="3"/>
-     <path d="M65,105 Q100,85 130,105" fill="${light}" stroke="${dark}" stroke-width="1.5"/>
-     <ellipse cx="70" cy="108" rx="12" ry="7" fill="${light}"/>`,
-
-    // Shape 1: Sauropod (long neck)
-    `<ellipse cx="95" cy="120" rx="40" ry="22" fill="${c}" stroke="${dark}" stroke-width="2"/>
-     <path d="M120,115 Q140,80 150,60 Q155,45 160,50" fill="none" stroke="${c}" stroke-width="14" stroke-linecap="round"/>
-     <ellipse cx="162" cy="52" rx="13" ry="10" fill="${c}" stroke="${dark}" stroke-width="1.5"/>
-     <circle cx="168" cy="48" r="3" fill="#111"/>
-     <circle cx="169" cy="47" r="1" fill="#fff"/>
-     <line x1="80" y1="140" x2="72" y2="163" stroke="${dark}" stroke-width="5" stroke-linecap="round"/>
-     <line x1="108" y1="140" x2="115" y2="163" stroke="${dark}" stroke-width="5" stroke-linecap="round"/>
-     <ellipse cx="71" cy="165" rx="9" ry="4" fill="${dark}"/>
-     <ellipse cx="116" cy="165" rx="9" ry="4" fill="${dark}"/>
-     <path d="M55,118 Q50,140 52,155" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round"/>`,
-
-    // Shape 2: Ceratopsian (horned)
-    `<ellipse cx="100" cy="115" rx="38" ry="26" fill="${c}" stroke="${dark}" stroke-width="2"/>
-     <ellipse cx="148" cy="108" rx="22" ry="18" fill="${c}" stroke="${dark}" stroke-width="2"/>
-     <path d="M126,92 Q140,75 155,78 Q162,80 158,90 Q150,85 140,88 Q130,90 126,92" fill="${light}" stroke="${dark}" stroke-width="1"/>
-     <circle cx="155" cy="90" r="3" fill="#111"/>
-     <circle cx="156" cy="89" r="1" fill="#fff"/>
-     <line x1="155" y1="80" x2="158" y2="68" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>
-     <line x1="148" y1="78" x2="148" y2="65" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>
-     <line x1="82" y1="135" x2="75" y2="158" stroke="${dark}" stroke-width="5" stroke-linecap="round"/>
-     <line x1="112" y1="135" x2="118" y2="158" stroke="${dark}" stroke-width="5" stroke-linecap="round"/>
-     <ellipse cx="74" cy="160" rx="9" ry="4" fill="${dark}"/>
-     <ellipse cx="119" cy="160" rx="9" ry="4" fill="${dark}"/>
-     <path d="M62,115 Q50,125 45,140" fill="none" stroke="${c}" stroke-width="8" stroke-linecap="round"/>`,
-
-    // Shape 3: Small raptor
-    `<ellipse cx="90" cy="115" rx="28" ry="20" fill="${c}" stroke="${dark}" stroke-width="2"/>
-     <ellipse cx="128" cy="102" rx="17" ry="12" fill="${c}" stroke="${dark}" stroke-width="2"/>
-     <ellipse cx="140" cy="97" rx="10" ry="8" fill="${light}" stroke="${dark}" stroke-width="1.5"/>
-     <circle cx="146" cy="94" r="3" fill="#111"/>
-     <circle cx="147" cy="93" r="1" fill="#fff"/>
-     <line x1="76" y1="130" x2="68" y2="153" stroke="${dark}" stroke-width="4" stroke-linecap="round"/>
-     <line x1="100" y1="132" x2="105" y2="153" stroke="${dark}" stroke-width="4" stroke-linecap="round"/>
-     <line x1="105" y1="153" x2="115" y2="155" stroke="${dark}" stroke-width="3" stroke-linecap="round"/>
-     <ellipse cx="67" cy="155" rx="7" ry="3" fill="${dark}"/>
-     <path d="M62,113 Q52,105 45,98" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/>
-     <path d="M115,115 Q130,120 145,118" fill="none" stroke="${c}" stroke-width="6" stroke-linecap="round"/>`,
+    // Type 3: RAPTOR (small agile)
+    `<svg viewBox="0 0 240 200" xmlns="http://www.w3.org/2000/svg" width="240" height="200">
+      <!-- tail (long, stiff) -->
+      <path d="M70,130 Q42,128 20,120 Q14,118 16,122 Q40,132 70,136" fill="${c}"/>
+      <!-- body (compact) -->
+      <ellipse cx="115" cy="130" rx="40" ry="28" fill="${c}"/>
+      <!-- belly -->
+      <ellipse cx="118" cy="138" rx="26" ry="17" fill="${belly}" opacity="0.35"/>
+      <!-- neck -->
+      <path d="M138,110 Q152,95 160,83 Q155,103 136,118" fill="${c}"/>
+      <!-- head (pointed snout) -->
+      <path d="M158,84 Q172,74 185,76 Q198,78 202,84 Q198,90 185,92 Q172,92 158,84 Z" fill="${c}"/>
+      <!-- lower jaw -->
+      <path d="M162,88 Q178,96 200,88 Q196,93 178,95 Q163,93 162,88" fill="${belly}" opacity="0.4"/>
+      <!-- teeth -->
+      <path d="M168,87 L169,93 L171,87" fill="white" opacity="0.9"/>
+      <path d="M177,86 L178,92 L180,86" fill="white" opacity="0.9"/>
+      <!-- eye -->
+      <circle cx="172" cy="79" r="6" fill="#111"/>
+      <circle cx="174" cy="77" r="2" fill="white"/>
+      <!-- arms (longer than T-rex) -->
+      <path d="M140,118 L128,132 L134,130 L130,140" stroke="${light}" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <!-- legs -->
+      <path d="M98,155 L88,180 L96,178 L100,182" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <path d="M120,158 L116,183 L126,181 L128,184" fill="${light}" stroke="${c}" stroke-width="1"/>
+      <!-- sickle claw -->
+      <path d="M88,180 Q82,186 86,192" stroke="${light}" stroke-width="3" fill="none" stroke-linecap="round"/>
+      <!-- feather hint on arms -->
+      <path d="M128,132 Q122,126 118,130" stroke="${light}" stroke-width="2" fill="none" opacity="0.5"/>
+      <!-- pattern dots -->
+      <circle cx="112" cy="122" r="3.5" fill="${light}" opacity="0.25"/>
+      <circle cx="124" cy="128" r="3" fill="${light}" opacity="0.2"/>
+      <circle cx="102" cy="132" r="3" fill="${light}" opacity="0.2"/>
+    </svg>`,
   ];
-
-  const shapeIdx = (DINOSAURS.indexOf(dino)) % shapes.length;
-  const crownStr = isSpecial
-    ? `<text x="90" y="30" font-size="18" text-anchor="middle">⭐</text><text x="90" y="22" font-size="10" fill="#FFD700" text-anchor="middle" font-weight="bold">FUKUI</text>`
-    : '';
-
-  svg.innerHTML = crownStr + shapes[shapeIdx];
+  return svgs[idx];
 }
 
-function shadeColor(hex, amount) {
-  let r = parseInt(hex.slice(1, 3), 16);
-  let g = parseInt(hex.slice(3, 5), 16);
-  let b = parseInt(hex.slice(5, 7), 16);
-  r = Math.max(0, Math.min(255, r + amount));
-  g = Math.max(0, Math.min(255, g + amount));
-  b = Math.max(0, Math.min(255, b + amount));
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+function lighten(hex, amount = 50) {
+  let r = Math.min(255, parseInt(hex.slice(1,3),16) + amount);
+  let g = Math.min(255, parseInt(hex.slice(3,5),16) + amount);
+  let b = Math.min(255, parseInt(hex.slice(5,7),16) + amount);
+  return '#' + [r,g,b].map(v=>v.toString(16).padStart(2,'0')).join('');
 }
 
-// ===== QUESTION SYSTEM =====
-function getNextQuestion() {
-  const pool = QUESTIONS[difficulty];
-  const available = pool.filter(q => !usedQuestions.includes(q));
-  if (available.length === 0) { usedQuestions = []; return pool[Math.floor(Math.random() * pool.length)]; }
-  const q = available[Math.floor(Math.random() * available.length)];
-  usedQuestions.push(q);
-  return q;
+// ========== GAME STATE ==========
+let diff = 'normal';
+let gameActive = false;
+let score = 0, combo = 0, maxCombo = 0;
+let totalKeys = 0, correctKeys = 0;
+let timeLeft = 30;
+let timerID = null;
+let defeatedDinos = [];
+let usedQs = [];
+let curDino = null, dinoHP = 0, dinoMaxHP = 0;
+let curQ = null;    // { text, r }
+let typed = '';     // ローマ字の打鍵バッファ
+let lastKeyTime = 0;
+
+// ========== INIT ==========
+(function initStars() {
+  const sf = document.getElementById('starfield');
+  for (let i = 0; i < 70; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = .5 + Math.random() * 2;
+    s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*100}%;animation-delay:${Math.random()*3}s;animation-duration:${2+Math.random()*3}s`;
+    sf.appendChild(s);
+  }
+})();
+
+function setDiff(d) {
+  diff = d;
+  document.querySelectorAll('.diff-btn').forEach(b => {
+    b.classList.remove('sel');
+    if (b.classList.contains(d)) b.classList.add('sel');
+  });
 }
 
-function getNextDino() {
-  const pool = [...DINOSAURS];
-  // Prefer not reusing recently defeated
-  const available = pool.filter(d => !defeatedDinos.slice(-3).includes(d));
-  if (available.length === 0) return pool[Math.floor(Math.random() * pool.length)];
-  return available[Math.floor(Math.random() * available.length)];
-}
-
-// ===== GAME FLOW =====
+// ========== COUNTDOWN ==========
 function startCountdown() {
-  document.getElementById('title-screen').style.display = 'none';
-  showCountdown(3, () => startGame());
+  document.getElementById('screen-title').style.display = 'none';
+  doCount(3);
 }
 
-function showCountdown(n, callback) {
-  if (n === 0) { callback(); return; }
-  const overlay = document.createElement('div');
-  overlay.className = 'countdown-overlay';
-  overlay.textContent = n === -1 ? 'GO!' : n;
-  document.body.appendChild(overlay);
-  setTimeout(() => {
-    overlay.remove();
-    showCountdown(n - 1, callback);
-  }, 900);
+function doCount(n) {
+  if (n === 0) { startGame(); return; }
+  const el = document.createElement('div');
+  el.className = 'countdown';
+  el.textContent = n;
+  document.body.appendChild(el);
+  setTimeout(() => { el.remove(); doCount(n - 1); }, 850);
 }
 
+// ========== GAME START ==========
 function startGame() {
   score = 0; combo = 0; maxCombo = 0;
-  timeLeft = 30; totalTyped = 0; correctTyped = 0;
-  defeatedDinos = []; usedQuestions = [];
-  gameActive = true;
+  totalKeys = 0; correctKeys = 0;
+  timeLeft = 30; defeatedDinos = []; usedQs = [];
+  typed = ''; gameActive = true;
 
-  document.getElementById('game-screen').style.display = 'flex';
-  document.getElementById('score-display').textContent = '0';
-  document.getElementById('combo-display').textContent = '0x';
-  document.getElementById('timer-display').textContent = '30';
-  document.getElementById('progress-bar').style.width = '100%';
+  document.getElementById('screen-game').style.display = 'flex';
+  document.getElementById('score-val').textContent = '0';
+  document.getElementById('combo-val').textContent = '0x';
+  document.getElementById('timer').textContent = '30';
+  document.getElementById('timer').className = 'timer';
+  document.getElementById('prog-bar').style.width = '100%';
 
   spawnDino();
-  loadQuestion();
+  nextQuestion();
+  updateInputDisplay();
 
-  const input = document.getElementById('typing-input');
-  input.value = '';
-  input.focus();
-  input.addEventListener('input', onInput);
-
-  timerInterval = setInterval(tick, 1000);
+  timerID = setInterval(tick, 1000);
+  document.addEventListener('keydown', onKey);
 }
 
+// ========== DINO SPAWN ==========
 function spawnDino() {
-  currentDino = getNextDino();
-  const hpScale = { easy: 1, normal: 2, hard: 3 }[difficulty];
-  currentDinoMaxHp = currentDino.hp * hpScale;
-  currentDinoHp = currentDinoMaxHp;
+  const pool = DINOS.filter(d => !defeatedDinos.slice(-4).includes(d));
+  curDino = pool[Math.floor(Math.random() * pool.length)] || DINOS[0];
 
-  document.getElementById('dino-jp-name').textContent = currentDino.name;
-  document.getElementById('dino-en-name').textContent = currentDino.en;
-  updateHpBar();
-  drawDino(currentDino);
+  const hpMult = { easy:1, normal:2, hard:3 }[diff];
+  dinoMaxHP = curDino.hp * hpMult;
+  dinoHP = dinoMaxHP;
 
-  const svg = document.getElementById('dino-svg');
-  svg.className = 'dino-svg';
-  svg.style.animation = '';
-  void svg.offsetWidth;
-  svg.style.animation = null;
+  document.getElementById('dino-jp').textContent = curDino.name;
+  document.getElementById('dino-en').textContent = curDino.en;
+  document.getElementById('dino-special').textContent = curDino.special ? '★' : '';
+  updateHP();
+
+  const wrap = document.getElementById('dino-wrap');
+  wrap.innerHTML = buildDinoSVG(curDino);
+  wrap.className = 'dino-svg-wrap';
+  wrap.style.filter = `drop-shadow(0 0 22px ${curDino.color}) drop-shadow(0 8px 24px rgba(0,0,0,.7))`;
 }
 
-function loadQuestion() {
-  currentQuestion = getNextQuestion();
-  currentInput = '';
-  const input = document.getElementById('typing-input');
-  input.value = '';
-  input.className = 'input-box';
+function updateHP() {
+  const pct = dinoMaxHP > 0 ? dinoHP / dinoMaxHP * 100 : 0;
+  document.getElementById('hp-bar').style.width = pct + '%';
+  document.getElementById('hp-text').textContent = `HP ${dinoHP} / ${dinoMaxHP}`;
+}
+
+// ========== QUESTION ==========
+function nextQuestion() {
+  const pool = QS[diff];
+  const avail = pool.filter(q => !usedQs.includes(q));
+  if (avail.length === 0) usedQs = [];
+  const q = (avail.length > 0 ? avail : pool)[Math.floor(Math.random() * (avail.length||pool.length))];
+  usedQs.push(q);
+  curQ = q;
+  typed = '';
   renderQuestion();
 }
 
 function renderQuestion() {
-  const display = document.getElementById('question-display');
+  // Display text (hiragana/kanji) - no per-char coloring needed, just show it
+  document.getElementById('q-text').textContent = curQ.text;
+
+  // Romaji progress display
+  const r = curQ.r;
   let html = '';
-  for (let i = 0; i < currentQuestion.length; i++) {
-    const ch = currentQuestion[i];
-    if (i < currentInput.length) {
-      const correct = currentInput[i] === ch;
-      html += `<span class="${correct ? 'char-correct' : 'char-wrong'}">${ch}</span>`;
-    } else if (i === currentInput.length) {
-      html += `<span class="char-current">${ch}</span>`;
-    } else {
-      html += `<span class="char-pending">${ch}</span>`;
-    }
+  for (let i = 0; i < r.length; i++) {
+    const cls = i < typed.length ? 'romaji-ok' : i === typed.length ? 'romaji-cur' : 'romaji-todo';
+    html += `<span class="${cls}">${r[i]}</span>`;
   }
-  display.innerHTML = html;
+  document.getElementById('q-romaji').innerHTML = html;
 }
 
-function onInput(e) {
+function updateInputDisplay() {
+  document.getElementById('typed-display').textContent = typed;
+  const bar = document.getElementById('input-bar');
+  if (typed.length === 0) {
+    bar.className = 'input-bar';
+  }
+}
+
+// ========== KEY INPUT ==========
+function onKey(e) {
   if (!gameActive) return;
-  const raw = e.target.value;
-  const now = Date.now();
-  const typingSpeed = now - lastTypeTime;
-  lastTypeTime = now;
+  if (e.ctrlKey || e.altKey || e.metaKey) return;
 
-  totalTyped++;
-  const expected = currentQuestion[currentInput.length];
-  const typed = raw[raw.length - 1];
-
-  if (typed === expected) {
-    correctTyped++;
-    currentInput = raw;
-    document.getElementById('typing-input').className = 'input-box correct';
-  } else {
-    combo = 0;
-    updateComboDisplay();
-    document.getElementById('typing-input').className = 'input-box wrong';
-    e.target.value = currentInput;
+  if (e.key === 'Backspace') {
+    if (typed.length > 0) {
+      typed = typed.slice(0, -1);
+      renderQuestion();
+      updateInputDisplay();
+      document.getElementById('input-bar').className = 'input-bar';
+    }
     return;
   }
 
-  renderQuestion();
+  // Accept only a-z and relevant punctuation
+  if (e.key.length !== 1) return;
+  const ch = e.key.toLowerCase();
+  if (!/[a-z]/.test(ch)) return;
 
-  if (currentInput.length >= currentQuestion.length) {
-    onQuestionComplete(typingSpeed);
+  e.preventDefault();
+
+  const now = Date.now();
+  const speed = now - lastKeyTime;
+  lastKeyTime = now;
+  totalKeys++;
+
+  const expected = curQ.r[typed.length];
+  if (ch === expected) {
+    correctKeys++;
+    typed += ch;
+    renderQuestion();
+    updateInputDisplay();
+    document.getElementById('input-bar').className = 'input-bar ok';
+
+    if (typed.length >= curQ.r.length) {
+      onComplete(speed);
+    }
+  } else {
+    // Wrong key
+    combo = 0;
+    renderCombo();
+    flashBar('ng');
   }
 }
 
-function onQuestionComplete(typingSpeed) {
+function flashBar(cls) {
+  const bar = document.getElementById('input-bar');
+  bar.className = 'input-bar ' + cls;
+  setTimeout(() => { if (bar.className === 'input-bar ' + cls) bar.className = 'input-bar'; }, 250);
+}
+
+// ========== COMPLETE QUESTION ==========
+function onComplete(speed) {
   combo++;
   if (combo > maxCombo) maxCombo = combo;
-  updateComboDisplay();
+  renderCombo();
 
-  // Damage calc: base 1, +speed bonus, +combo bonus
-  const speedBonus = typingSpeed < 200 ? 2 : typingSpeed < 400 ? 1 : 0;
+  const speedBonus = speed < 150 ? 3 : speed < 300 ? 2 : speed < 500 ? 1 : 0;
   const comboBonus = Math.floor(combo / 3);
-  const damage = 1 + speedBonus + comboBonus;
+  const dmg = 1 + speedBonus + comboBonus;
 
-  currentDinoHp = Math.max(0, currentDinoHp - damage);
-  updateHpBar();
-  showAttackEffect(damage, combo);
+  dinoHP = Math.max(0, dinoHP - dmg);
+  updateHP();
+  showEffect(dmg, combo);
 
-  const svg = document.getElementById('dino-svg');
-
-  if (currentDinoHp <= 0) {
-    svg.className = 'dino-svg defeated';
-    defeatedDinos.push(currentDino);
+  const wrap = document.getElementById('dino-wrap');
+  if (dinoHP <= 0) {
+    wrap.classList.remove('hit');
+    wrap.classList.add('dead');
+    defeatedDinos.push(curDino);
     score++;
-    document.getElementById('score-display').textContent = score;
-    showScorePopup(`+1 撃破！`);
-
+    document.getElementById('score-val').textContent = score;
+    showPopup('💥 撃破！ +'+(combo >= 3 ? combo+'コンボ' : ''), '50%', '15%');
     setTimeout(() => {
       if (!gameActive) return;
       spawnDino();
-      loadQuestion();
-    }, 700);
+      nextQuestion();
+      updateInputDisplay();
+    }, 650);
   } else {
-    svg.classList.remove('hit');
-    void svg.offsetWidth;
-    svg.className = 'dino-svg hit';
+    wrap.className = 'dino-svg-wrap hit';
+    wrap.style.filter = `drop-shadow(0 0 22px ${curDino.color}) drop-shadow(0 8px 24px rgba(0,0,0,.7))`;
     setTimeout(() => {
-      if (svg.className === 'dino-svg hit') svg.className = 'dino-svg';
-    }, 400);
-    loadQuestion();
+      if (wrap.className.includes('hit')) {
+        wrap.className = 'dino-svg-wrap';
+      }
+    }, 380);
+    nextQuestion();
+    updateInputDisplay();
   }
 }
 
-function updateHpBar() {
-  const pct = currentDinoMaxHp > 0 ? (currentDinoHp / currentDinoMaxHp * 100) : 0;
-  document.getElementById('dino-hp-bar').style.width = pct + '%';
-  document.getElementById('dino-hp-text').textContent = `HP ${currentDinoHp} / ${currentDinoMaxHp}`;
-}
-
-function updateComboDisplay() {
-  const el = document.getElementById('combo-display');
+function renderCombo() {
+  const el = document.getElementById('combo-val');
   el.textContent = combo + 'x';
-  el.className = combo >= 3 ? 'combo-display big' : 'combo-display';
+  el.className = combo >= 3 ? 'combo-val big' : 'combo-val';
 }
 
-function showAttackEffect(damage, combo) {
+function showEffect(dmg, combo) {
   const layer = document.getElementById('effect-layer');
-  const effects = ['⚡', '💥', '✨', '🗡️', '🔥'];
-  const idx = Math.min(damage - 1, effects.length - 1);
+  const icons = ['⚡','💥','🔥','✨','⚔️'];
   const el = document.createElement('div');
-  el.className = 'slash-effect';
-  el.textContent = effects[idx];
-  el.style.left = (30 + Math.random() * 40) + '%';
-  el.style.top = (20 + Math.random() * 40) + '%';
+  el.className = 'slash';
+  el.textContent = icons[Math.min(dmg - 1, icons.length - 1)];
+  el.style.left = (20 + Math.random() * 50) + '%';
+  el.style.top = (15 + Math.random() * 45) + '%';
   layer.appendChild(el);
-  setTimeout(() => el.remove(), 500);
-
-  if (combo >= 5) {
-    const popup = document.createElement('div');
-    popup.className = 'score-popup';
-    popup.textContent = combo + 'コンボ！！';
-    popup.style.left = '50%';
-    popup.style.top = '10%';
-    popup.style.transform = 'translateX(-50%)';
-    layer.appendChild(popup);
-    setTimeout(() => popup.remove(), 1000);
-  }
+  setTimeout(() => el.remove(), 450);
 }
 
-function showScorePopup(text) {
+function showPopup(text, x, y) {
   const layer = document.getElementById('effect-layer');
-  const popup = document.createElement('div');
-  popup.className = 'score-popup';
-  popup.textContent = text;
-  popup.style.left = '50%';
-  popup.style.top = '20%';
-  popup.style.transform = 'translateX(-50%)';
-  layer.appendChild(popup);
-  setTimeout(() => popup.remove(), 1000);
+  const el = document.createElement('div');
+  el.className = 'popup';
+  el.textContent = text;
+  el.style.left = x;
+  el.style.top = y;
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), 950);
 }
 
+// ========== TIMER ==========
 function tick() {
   timeLeft--;
-  const timer = document.getElementById('timer-display');
-  timer.textContent = timeLeft;
-  document.getElementById('progress-bar').style.width = (timeLeft / 30 * 100) + '%';
-
-  if (timeLeft <= 10) {
-    timer.className = 'timer-display danger';
-  }
-
-  if (timeLeft <= 0) {
-    endGame();
-  }
+  document.getElementById('timer').textContent = timeLeft;
+  document.getElementById('prog-bar').style.width = (timeLeft / 30 * 100) + '%';
+  if (timeLeft <= 10) document.getElementById('timer').className = 'timer danger';
+  if (timeLeft <= 0) endGame();
 }
 
+// ========== END GAME ==========
 function endGame() {
   gameActive = false;
-  clearInterval(timerInterval);
+  clearInterval(timerID);
+  document.removeEventListener('keydown', onKey);
 
-  const input = document.getElementById('typing-input');
-  input.removeEventListener('input', onInput);
+  const acc = totalKeys > 0 ? Math.round(correctKeys / totalKeys * 100) : 0;
 
-  const acc = totalTyped > 0 ? Math.round(correctTyped / totalTyped * 100) : 0;
-
-  document.getElementById('game-screen').style.display = 'none';
-  document.getElementById('result-screen').style.display = 'flex';
+  document.getElementById('screen-game').style.display = 'none';
+  document.getElementById('screen-result').style.display = 'flex';
 
   document.getElementById('res-score').textContent = score;
   document.getElementById('res-combo').textContent = maxCombo;
   document.getElementById('res-acc').textContent = acc;
-  document.getElementById('res-chars').textContent = correctTyped;
+  document.getElementById('res-chars').textContent = correctKeys;
 
-  // Rank
   let rank, comment;
-  if (score >= 15) { rank = 'SS'; comment = 'ほやほや、最強すぎるわいね！'; }
-  else if (score >= 10) { rank = 'S'; comment = 'えらい！そんなに倒せるんけ！'; }
-  else if (score >= 7) { rank = 'A'; comment = 'なかなかやるやないけ！'; }
-  else if (score >= 4) { rank = 'B'; comment = 'まあまあやわいね！'; }
-  else if (score >= 2) { rank = 'C'; comment = 'もっと練習せなあかんぞ！'; }
-  else { rank = 'D'; comment = 'なんしとるん？がんばれや！'; }
+  if (score >= 14)     { rank = 'SS'; comment = '完璧！ふくいの恐竜マスターやわいね！'; }
+  else if (score >= 10){ rank = 'S';  comment = 'えらい！そんなに倒せるんけ！'; }
+  else if (score >= 7) { rank = 'A';  comment = 'なかなかやるやないけ！'; }
+  else if (score >= 4) { rank = 'B';  comment = 'まあまあやわいね！'; }
+  else if (score >= 2) { rank = 'C';  comment = 'もっと練習せなあかんぞ！'; }
+  else                 { rank = 'D';  comment = 'なんしとるん？がんばれや！'; }
 
-  document.getElementById('result-rank').textContent = rank;
-  document.getElementById('result-comment').textContent = comment;
+  document.getElementById('res-rank').textContent = rank;
+  document.getElementById('res-comment').textContent = comment;
 
-  const dinoListEl = document.getElementById('res-dino-list');
-  dinoListEl.innerHTML = defeatedDinos.length === 0
-    ? '<span style="color:#888">まだ倒してない...</span>'
-    : defeatedDinos.map(d => `<span class="result-dino-tag">${d.name}</span>`).join('');
+  const tagsEl = document.getElementById('res-dino-tags');
+  tagsEl.innerHTML = defeatedDinos.length === 0
+    ? '<span style="color:#666">まだ倒せてへん...</span>'
+    : defeatedDinos.map(d =>
+        `<span class="res-dino-tag">${d.special ? '★' : ''}${d.name}</span>`
+      ).join('');
 }
 
 function goTitle() {
-  document.getElementById('result-screen').style.display = 'none';
-  document.getElementById('title-screen').style.display = 'flex';
-  document.getElementById('timer-display').className = 'timer-display';
+  document.getElementById('screen-result').style.display = 'none';
+  document.getElementById('screen-title').style.display = 'flex';
 }
 </script>
 </body>
